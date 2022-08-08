@@ -4,6 +4,7 @@ use bevy::{prelude::*, math::vec3, render::camera::{Camera2d, ScalingMode}};
 // use bevy_inspector_egui::egui::Key;
 // use bevy_editor_pls::*;
 use heron::prelude::*;
+use rand::Rng;
 
 fn main() {
 	App::new()
@@ -15,8 +16,8 @@ fn main() {
 	.insert_resource(Gravity::from(Vec2::new(0., -9.81)))
 	.add_startup_system(startup_system)
 	.add_system(enemy_spawner)
-	.add_system(jump)
-	.add_system(grounded_check)
+	.add_system(hop)
+	.add_system(hopper_grounding)
 	.run();
 }
 
@@ -24,9 +25,10 @@ fn main() {
 struct Enemy;
 
 #[derive(Component)]
-struct Jump {
+struct Hop {
 	grounded: bool,
-	just_jumped: bool
+	just_hopped: bool,
+	power: Vec2
 }
 
 #[derive(PhysicsLayer)]
@@ -73,15 +75,18 @@ fn enemy_spawner(
 ) {
 	duration.add_assign(time.delta());
 	
-	if duration.as_millis() > 5000 {
+	if duration.as_millis() > 1000 {
 		*duration = Duration::ZERO;
+		if rand::thread_rng().gen_range(0f32..=1f32) < 0.9 {
+			return;
+		}
 		
 		let enemy_shape = Vec2::new(10.0, 10.0);
 		commands
 			.spawn()
 			.insert(Enemy)
 			.insert_bundle(SpriteBundle {
-				transform: Transform::from_translation(Vec3::new(-100., 1., 0.)),
+				transform: Transform::from_translation(Vec3::new(-100., 5., 0.)),
 				sprite: Sprite {
 					color: Color::BLACK,
 					custom_size: Some(enemy_shape),
@@ -89,16 +94,19 @@ fn enemy_spawner(
 				},
 				..default()
 			})
-			.insert(	Jump {
-				just_jumped: false,
+			.insert(	Hop {
+				just_hopped: false,
 				grounded: true,
+				power: Vec2::new(
+					rand::thread_rng().gen_range(150.0..300.0),
+					rand::thread_rng().gen_range(700.0..1000.0))
 			})
 			.insert(RigidBody::Dynamic)
 			.insert(RotationConstraints::lock())
 			.insert(PhysicMaterial {
 				density: 1.,
 				friction: 2.,
-				restitution: 0.
+				restitution: 0.25
 			})
 			.insert(CollisionShape::Cuboid {
 				half_extends: enemy_shape.extend(0.) / 2.,
@@ -108,40 +116,33 @@ fn enemy_spawner(
 			.insert(CollisionLayers::none()
 				.with_group(PhysicsLayers::Hopper)
     			.with_masks(&[PhysicsLayers::World, PhysicsLayers::Hopper])
-			);
+			)
+			.insert(Collisions::default()
+		);
 	}
 }
 
-fn jump(mut accel_query: Query<(&mut Acceleration, &mut Jump)>) {
-	accel_query.for_each_mut(|(mut accel, mut jump)| {
-		if jump.grounded {
-			jump.just_jumped = true;
-			jump.grounded = false;
-			accel.linear = Vec3::new(500., 1500., 0.);
+fn hop(mut accel_query: Query<(&mut Acceleration, &mut Hop)>) {
+	accel_query.for_each_mut(|(mut accel, mut hop)| {
+		if hop.grounded {
+			hop.just_hopped = true;
+			hop.grounded = false;
+			accel.linear = hop.power.extend(0.);
 		}
-		else if jump.just_jumped {
-			jump.just_jumped = false;
+		else if hop.just_hopped {
+			hop.just_hopped = false;
 			accel.linear = Vec3::ZERO;
 		}
 	});
 }
 
-fn grounded_check(
-	mut events: EventReader<CollisionEvent>,
-	mut query: Query<(Entity, &mut Jump)>
-) {
-	for event in events.iter() {
-		if event.is_stopped() {break;}
-		
-		query.for_each_mut(|(entity, mut jump)| {
-			if event.rigid_body_entities().0 == entity || event.rigid_body_entities().1 == entity {
-				if event.collision_layers().0.contains_group(PhysicsLayers::World) ||
-					event.collision_layers().1.contains_group(PhysicsLayers::World) {
-					jump.grounded = true;
-					// println!("{} collided with {}", event.rigid_body_entities().0.id(), event.rigid_body_entities().1.id());
-					// println!("    entity is {}", entity.id());
-				}
+fn hopper_grounding(mut query: Query<(&mut Hop, &Collisions)>) {
+ 	query.for_each_mut(|(mut hop, collisions)| {
+		for c in collisions.collision_data() {
+			if c.collision_layers().contains_group(PhysicsLayers::World) {
+				hop.grounded = true;
+				break;
 			}
-		});
-	}
-}
+		}
+ 	});
+ }
