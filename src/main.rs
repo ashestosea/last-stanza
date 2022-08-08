@@ -34,7 +34,8 @@ struct Hop {
 #[derive(PhysicsLayer)]
 enum PhysicsLayers {
 	World,
-	Hopper
+	Hopper,
+	Debug
 }
 
 fn startup_system(mut commands: Commands) {
@@ -46,26 +47,41 @@ fn startup_system(mut commands: Commands) {
 	commands.spawn_bundle(cam);
 	
 	// Spawn world
-	let world_shape = Vec2::new(1000., 10.);
+	let world_shape = Vec2::new(244., 10.);
+	let one = 10f32;
+	let two = 20f32;
+	let three = 30f32;
+	let four = 40f32;
 	commands
-		.spawn()
-		.insert_bundle(SpriteBundle {
-			transform: Transform::from_translation(Vec3::new(0., -5., 0.)),
+        .spawn()
+        .insert_bundle(SpriteBundle {
 			sprite: Sprite {
-				color: Color::WHITE,
-				custom_size: Some(world_shape),
-				..default()
+			color: Color::hsla(0., 0., 0., 0.),
+			custom_size: Some(world_shape),
+			..Default::default()
 			},
-			..default()
+			transform: Transform::from_translation(Vec3::new(0., -5., 0.)),
+			..Default::default()
 		})
-		.insert(RigidBody::Static)
-		.insert(CollisionShape::Cuboid {
-			half_extends: world_shape.extend(0.) / 2.,
-			border_radius: None
-		})
+        .insert(CollisionShape::HeightField {
+            size: world_shape,
+            heights: vec![vec![
+				0., 0.,
+				0., 0.,
+				one, one,
+				two, two,
+				three, three,
+				four, four,
+				three, three,
+				two, two,
+				one, one,
+				0., 0.,
+				0., 0.]],
+        })
+        .insert(RigidBody::Static)
 		.insert(CollisionLayers::none()
 			.with_group(PhysicsLayers::World)
-			.with_mask(PhysicsLayers::Hopper));
+			.with_masks(&[PhysicsLayers::Debug, PhysicsLayers::Hopper]));
 }
 
 fn enemy_spawner(
@@ -86,7 +102,7 @@ fn enemy_spawner(
 			.spawn()
 			.insert(Enemy)
 			.insert_bundle(SpriteBundle {
-				transform: Transform::from_translation(Vec3::new(-100., 5., 0.)),
+				transform: Transform::from_translation(Vec3::new(-120., 5., 0.)),
 				sprite: Sprite {
 					color: Color::BLACK,
 					custom_size: Some(enemy_shape),
