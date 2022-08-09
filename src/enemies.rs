@@ -70,7 +70,7 @@ fn enemy_spawner(
 			.spawn()
 			.insert(Enemy)
 			.insert_bundle(SpriteBundle {
-				transform: Transform::from_translation(Vec3::new(-120., 5., 0.)),
+				transform: Transform::from_translation(Vec3::new(-120., 20., 0.)),
 				sprite: Sprite {
 					color: Color::BLACK,
 					custom_size: Some(enemy_shape),
@@ -99,7 +99,7 @@ fn enemy_spawner(
 			.insert(Acceleration::from_linear(Vec3::ZERO))
 			.insert(CollisionLayers::none()
 				.with_group(PhysicsLayers::Hopper)
-    			.with_masks(&[PhysicsLayers::World, PhysicsLayers::Hopper])
+    			.with_masks(&[PhysicsLayers::Ground, PhysicsLayers::Hopper, PhysicsLayers::Wall])
 			)
 			.insert(Collisions::default()
 		);
@@ -123,7 +123,7 @@ fn hop(mut accel_query: Query<(&mut Acceleration, &mut Hop)>) {
 fn hopper_grounding(mut query: Query<(&mut Hop, &Collisions)>) {
  	query.for_each_mut(|(mut hop, collisions)| {
 		for c in collisions.collision_data() {
-			if c.collision_layers().contains_group(PhysicsLayers::World) {
+			if c.collision_layers().contains_group(PhysicsLayers::Ground) {
 				hop.grounded = true;
 				break;
 			}

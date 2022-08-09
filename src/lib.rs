@@ -45,7 +45,8 @@ impl Plugin for GamePlugin {
 
 #[derive(PhysicsLayer)]
 enum PhysicsLayers {
-	World,
+	Ground,
+	Wall,
 	Hopper,
 	Debug
 }
