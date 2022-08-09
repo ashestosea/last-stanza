@@ -1,5 +1,5 @@
 use crate::GameState;
-use bevy::{prelude::*, math::vec3, render::camera::{ScalingMode, Camera2d}};
+use bevy::{prelude::*, math::vec3, render::camera::ScalingMode};
 
 pub struct MenuPlugin;
 
@@ -29,23 +29,22 @@ impl Default for ButtonColors {
 
 fn setup_menu(
     mut commands: Commands,
-	mut state: ResMut<State<GameState>>,
     button_colors: Res<ButtonColors>,
 ) {
-	let mut cam = OrthographicCameraBundle::<Camera2d>::new_2d();
-	cam.transform.translation = vec3(0., 40., 0.);
-	cam.orthographic_projection.scaling_mode = ScalingMode::FixedHorizontal;
-	cam.orthographic_projection.scale = 100.;
-	commands.spawn_bundle(cam);
-	                state.set(GameState::Playing).unwrap();
-
-	
+	commands.spawn_bundle(Camera2dBundle {
+		transform: Transform::from_translation(vec3(0., 50., 0.)),
+		projection: OrthographicProjection {
+			scaling_mode: ScalingMode::FixedHorizontal(250.),
+			..Default::default()
+		},
+		..Default::default()
+	});
+		
     commands
         .spawn_bundle(ButtonBundle {
             style: Style {
                 size: Size::new(Val::Px(120.0), Val::Px(50.0)),
-                // margin: UiRect::all(Val::Auto),
-				// margin: 
+                margin: UiRect::all(Val::Auto),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 ..Default::default()
