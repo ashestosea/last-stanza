@@ -73,3 +73,6 @@ impl Default for DynamicActorBundle {
         }
     }
 }
+
+#[derive(Component)]
+struct MainCamera;

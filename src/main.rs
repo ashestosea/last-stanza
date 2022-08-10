@@ -6,8 +6,8 @@ use last_stanza::GamePlugin;
 fn main() {
 	App::new()
 	.insert_resource(WindowDescriptor {
-		width: 350.,
-		height: 265.,
+		// width: 350.,
+		// height: 265.,
 		..Default::default()
 	})
 	.add_plugins(DefaultPlugins)

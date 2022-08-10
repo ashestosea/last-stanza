@@ -1,16 +1,15 @@
-use crate::GameState;
-use bevy::{prelude::*, math::vec3, render::camera::ScalingMode};
+use crate::{GameState, MainCamera};
+use bevy::{math::vec3, prelude::*, render::camera::ScalingMode};
 
 pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
-	fn build(&self, app: &mut App) {
-		app
-			.init_resource::<ButtonColors>()
-			.add_system_set(SystemSet::on_enter(GameState::Menu).with_system(setup_menu))
+    fn build(&self, app: &mut App) {
+        app.init_resource::<ButtonColors>()
+            .add_system_set(SystemSet::on_enter(GameState::Menu).with_system(setup_menu))
             .add_system_set(SystemSet::on_update(GameState::Menu).with_system(click_play_button))
             .add_system_set(SystemSet::on_exit(GameState::Menu).with_system(cleanup_menu));
-	}
+    }
 }
 
 struct ButtonColors {
@@ -27,47 +26,44 @@ impl Default for ButtonColors {
     }
 }
 
-fn setup_menu(
-    mut commands: Commands,
-    button_colors: Res<ButtonColors>,
-) {
-	commands.spawn_bundle(Camera2dBundle {
-		transform: Transform::from_translation(vec3(0., 35., 0.)),
-		projection: OrthographicProjection {
-			scaling_mode: ScalingMode::FixedHorizontal(350.),
-			..Default::default()
-		},
-		..Default::default()
-	});
-		
-    commands
-        .spawn_bundle(ButtonBundle {
-            style: Style {
-                size: Size::new(Val::Px(120.0), Val::Px(50.0)),
-                margin: UiRect::all(Val::Auto),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..Default::default()
-            },
-            color: button_colors.normal,
+fn setup_menu(mut commands: Commands, button_colors: Res<ButtonColors>) {
+    commands.spawn_bundle(Camera2dBundle {
+        transform: Transform::from_translation(vec3(0., 35., 0.)),
+        projection: OrthographicProjection {
+            scaling_mode: ScalingMode::FixedHorizontal(150.),
             ..Default::default()
-        });
-        // .with_children(|parent| {
-        //     parent.spawn_bundle(TextBundle {
-        //         text: Text {
-        //             sections: vec![TextSection {
-        //                 value: "Play".to_string(),
-        //                 style: TextStyle {
-        //                     // font: font_assets.fira_sans.clone(),
-        //                     font_size: 40.0,
-        //                     color: Color::rgb(0.9, 0.9, 0.9),
-        //                 }
-        //             }],
-        //             alignment: Default::default(),
-        //         },
-        //         ..Default::default()
-        //     });
-        // });
+        },
+        ..Default::default()
+    })
+    .insert(MainCamera);
+
+    commands.spawn_bundle(ButtonBundle {
+        style: Style {
+            size: Size::new(Val::Px(120.0), Val::Px(50.0)),
+            margin: UiRect::all(Val::Auto),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            ..Default::default()
+        },
+        color: button_colors.normal,
+        ..Default::default()
+    });
+    // .with_children(|parent| {
+    //     parent.spawn_bundle(TextBundle {
+    //         text: Text {
+    //             sections: vec![TextSection {
+    //                 value: "Play".to_string(),
+    //                 style: TextStyle {
+    //                     // font: font_assets.fira_sans.clone(),
+    //                     font_size: 40.0,
+    //                     color: Color::rgb(0.9, 0.9, 0.9),
+    //                 }
+    //             }],
+    //             alignment: Default::default(),
+    //         },
+    //         ..Default::default()
+    //     });
+    // });
 }
 
 fn click_play_button(
@@ -78,19 +74,17 @@ fn click_play_button(
         (Changed<Interaction>, With<Button>),
     >,
 ) {
-    interaction_query.for_each_mut(|(interaction, mut color)| {
-        match *interaction {
-            Interaction::Clicked => {
-                state.set(GameState::Playing).unwrap();
-            }
-            Interaction::Hovered => {
-                *color = button_colors.hovered;
-            }
-            Interaction::None => {
-                *color = button_colors.normal;
-            }
+    interaction_query.for_each_mut(|(interaction, mut color)| match *interaction {
+        Interaction::Clicked => {
+            state.set(GameState::Playing).unwrap();
         }
-	});
+        Interaction::Hovered => {
+            *color = button_colors.hovered;
+        }
+        Interaction::None => {
+            *color = button_colors.normal;
+        }
+    });
 }
 
 fn cleanup_menu(mut commands: Commands, button: Query<Entity, With<Button>>) {
