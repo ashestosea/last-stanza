@@ -13,22 +13,26 @@ impl Plugin for WorldPlugin {
 }
 
 fn spawn_world(mut commands: Commands) {
-    let step_size = 20.;
+    let step_height = 10.;
+    let step_decrement = 32.;
+    let step_count = 3;
 
     // Ground
-    let mut collider_pos = Vec3::new(0., 0., 0.);
+    let mut pos = Vec3::new(0., -20., 0.);
+    let ground_shape = Vec2::new(1000., 30.);
     commands
         .spawn()
-        .insert_bundle(TransformBundle {
-            local: Transform::from_translation(collider_pos),
+        .insert_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: Color::hsla(0.5, 1., 0.6, 1.),
+                custom_size: Some(ground_shape),
+                ..Default::default()
+            },
+            transform: Transform::from_translation(pos),
             ..Default::default()
         })
         .insert(CollisionShape::Cuboid {
-            half_extends: Vec3 {
-                x: step_size * 5.,
-                y: 0.1,
-                z: 0.,
-            },
+            half_extends: ground_shape.extend(0.) / 2.,
             border_radius: None,
         })
         .insert(RigidBody::Static)
@@ -38,17 +42,28 @@ fn spawn_world(mut commands: Commands) {
                 .with_masks(&[PhysicsLayers::Debug, PhysicsLayers::Hopper]),
         );
 
-    let mut collider_half_extents = Vec3::new((step_size * 5.) / 2., 0.1, 0.);
-    for i in 0..=4 {
-        // Colliders
+    let mut step_shape = Vec2::new(0., step_height);
+    for i in 0..=step_count {
+        if i < step_count {
+            step_shape.x = (step_height * 11.) - (i as f32 * step_decrement);
+        } else {
+            step_shape.x = 1.;
+        }
+        pos.y = step_height * i as f32;
+
         commands
             .spawn()
-            .insert_bundle(TransformBundle {
-                local: Transform::from_translation(collider_pos),
+            .insert_bundle(SpriteBundle {
+                sprite: Sprite {
+                    color: Color::hsla(1., 1., 1., 1.),
+                    custom_size: Some(step_shape),
+                    ..Default::default()
+                },
+                transform: Transform::from_translation(pos),
                 ..Default::default()
             })
             .insert(CollisionShape::Cuboid {
-                half_extends: collider_half_extents,
+                half_extends: step_shape.extend(0.) / 2.,
                 border_radius: None,
             })
             .insert(RigidBody::Static)
@@ -57,102 +72,5 @@ fn spawn_world(mut commands: Commands) {
                     .with_group(PhysicsLayers::Ground)
                     .with_masks(&[PhysicsLayers::Debug, PhysicsLayers::Hopper]),
             );
-
-        // Sprites
-        commands.spawn().insert_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::hsla(1., 1., 1., 1.),
-                custom_size: Some(Vec2::new(
-                    collider_half_extents.x * 2.,
-                    collider_half_extents.y,
-                )),
-                ..Default::default()
-            },
-            transform: Transform::from_translation(collider_pos),
-            ..Default::default()
-        });
-
-        collider_half_extents.x = collider_half_extents.x - (step_size / 2.);
-        collider_pos.y = collider_pos.y + (step_size / 2.);
-    }
-
-    // Left Walls
-    let collider_half_extents = Vec3::new(0.1, step_size / 2., 0.);
-    let mut collider_pos = Vec3::new(-step_size * 2., step_size / 4., 0.);
-    for i in 0..=3 {
-        // Colliders
-        commands
-            .spawn()
-            .insert_bundle(TransformBundle {
-                local: Transform::from_translation(collider_pos),
-                ..Default::default()
-            })
-            .insert(CollisionShape::Cuboid {
-                half_extends: collider_half_extents,
-                border_radius: None,
-            })
-            .insert(RigidBody::Static)
-            .insert(
-                CollisionLayers::none()
-                    .with_group(PhysicsLayers::Wall)
-                    .with_masks(&[PhysicsLayers::Debug, PhysicsLayers::Hopper]),
-            );
-
-        // Sprites
-        commands.spawn().insert_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::hsla(1., 1., 1., 1.),
-                custom_size: Some(Vec2::new(
-                    collider_half_extents.x * 2.,
-                    collider_half_extents.y,
-                )),
-                ..Default::default()
-            },
-            transform: Transform::from_translation(collider_pos),
-            ..Default::default()
-        });
-
-        collider_pos.x = collider_pos.x + (step_size / 2.);
-        collider_pos.y = collider_pos.y + (step_size / 2.);
-    }
-
-    // Right Walls
-    let collider_half_extents = Vec3::new(0.1, step_size / 2., 0.);
-    let mut collider_pos = Vec3::new(step_size * 2., step_size / 4., 0.);
-    for i in 0..=3 {
-        // Colliders
-        commands
-            .spawn()
-            .insert_bundle(TransformBundle {
-                local: Transform::from_translation(collider_pos),
-                ..Default::default()
-            })
-            .insert(CollisionShape::Cuboid {
-                half_extends: collider_half_extents,
-                border_radius: None,
-            })
-            .insert(RigidBody::Static)
-            .insert(
-                CollisionLayers::none()
-                    .with_group(PhysicsLayers::Wall)
-                    .with_masks(&[PhysicsLayers::Debug, PhysicsLayers::Hopper]),
-            );
-
-        // Sprites
-        commands.spawn().insert_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::hsla(1., 1., 1., 1.),
-                custom_size: Some(Vec2::new(
-                    collider_half_extents.x * 2.,
-                    collider_half_extents.y,
-                )),
-                ..Default::default()
-            },
-            transform: Transform::from_translation(collider_pos),
-            ..Default::default()
-        });
-
-        collider_pos.x = collider_pos.x - (step_size / 2.);
-        collider_pos.y = collider_pos.y + (step_size / 2.);
     }
 }

@@ -32,9 +32,9 @@ fn setup_menu(
     button_colors: Res<ButtonColors>,
 ) {
 	commands.spawn_bundle(Camera2dBundle {
-		transform: Transform::from_translation(vec3(0., 50., 0.)),
+		transform: Transform::from_translation(vec3(0., 35., 0.)),
 		projection: OrthographicProjection {
-			scaling_mode: ScalingMode::FixedHorizontal(250.),
+			scaling_mode: ScalingMode::FixedHorizontal(150.),
 			..Default::default()
 		},
 		..Default::default()

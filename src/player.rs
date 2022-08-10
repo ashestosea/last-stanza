@@ -30,7 +30,7 @@ fn spawn_player(mut commands: Commands) {
 				custom_size: Some(Vec2::new(5., 5.)),
 				..Default::default()
 			},
-            transform: Transform::from_translation(Vec3::new(0., 50., 1.)),
+            transform: Transform::from_translation(Vec3::new(0., 37.5, 0.)),
             ..Default::default()
         })
         .insert(Player {charge: 0.});

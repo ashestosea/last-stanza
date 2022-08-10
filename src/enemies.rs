@@ -37,7 +37,6 @@ struct HopperBundle {
 #[derive(Component)]
 struct Hop {
 	grounded: bool,
-	just_hopped: bool,
 	power: Vec2
 }
 
@@ -61,16 +60,16 @@ fn enemy_spawner(
 	
 	if duration.as_millis() > 1000 {
 		*duration = Duration::ZERO;
-		if rand::thread_rng().gen_range(0f32..=1f32) < 0.95 {
+		if rand::thread_rng().gen_range(0f32..1f32) < 0.85 {
 			return;
 		}
 		
-		let enemy_shape = Vec2::new(10.0, 10.0);
+		let enemy_shape = Vec2::new(6.0, 11.0);
 		commands
 			.spawn()
 			.insert(Enemy)
 			.insert_bundle(SpriteBundle {
-				transform: Transform::from_translation(Vec3::new(-120., 20., 0.)),
+				transform: Transform::from_translation(Vec3::new(-120., 5.5, 0.)),
 				sprite: Sprite {
 					color: Color::BLACK,
 					custom_size: Some(enemy_shape),
@@ -78,12 +77,11 @@ fn enemy_spawner(
 				},
 				..default()
 			})
-			.insert(	Hop {
-				just_hopped: false,
+			.insert(Hop {
 				grounded: true,
 				power: Vec2::new(
-					rand::thread_rng().gen_range(150.0..300.0),
-					rand::thread_rng().gen_range(700.0..1000.0))
+					rand::thread_rng().gen_range(150.0..250.0),
+					rand::thread_rng().gen_range(700.0..900.0)),
 			})
 			.insert(RigidBody::Dynamic)
 			.insert(RotationConstraints::lock())
@@ -106,27 +104,30 @@ fn enemy_spawner(
 	}
 }
 
-fn hop(mut accel_query: Query<(&mut Acceleration, &mut Hop)>) {
-	accel_query.for_each_mut(|(mut accel, mut hop)| {
+fn hop(mut query: Query<(&mut Acceleration, &Hop)>) {
+	for (mut accel, hop) in query.iter_mut() {
 		if hop.grounded {
-			hop.just_hopped = true;
-			hop.grounded = false;
 			accel.linear = hop.power.extend(0.);
 		}
-		else if hop.just_hopped {
-			hop.just_hopped = false;
+		else if accel.linear.length_squared() > 0. {
 			accel.linear = Vec3::ZERO;
 		}
-	});
+	};
 }
 
 fn hopper_grounding(mut query: Query<(&mut Hop, &Collisions)>) {
- 	query.for_each_mut(|(mut hop, collisions)| {
+ 	for (mut hop, collisions) in query.iter_mut() {
+		hop.grounded = false;
+		
 		for c in collisions.collision_data() {
 			if c.collision_layers().contains_group(PhysicsLayers::Ground) {
-				hop.grounded = true;
-				break;
+				for n in c.normals() {
+					if *n == Vec3::Y {
+						hop.grounded = true;
+						return;
+					}
+				}
 			}
 		}
- 	});
+ 	};
  }
