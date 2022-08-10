@@ -34,7 +34,7 @@ fn setup_menu(
 	commands.spawn_bundle(Camera2dBundle {
 		transform: Transform::from_translation(vec3(0., 35., 0.)),
 		projection: OrthographicProjection {
-			scaling_mode: ScalingMode::FixedHorizontal(150.),
+			scaling_mode: ScalingMode::FixedHorizontal(350.),
 			..Default::default()
 		},
 		..Default::default()

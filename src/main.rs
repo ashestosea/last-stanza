@@ -1,10 +1,15 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::{WindowMode, PresentMode}};
 // use bevy_inspector_egui::egui::Key;
 // use bevy_editor_pls::*;
 use last_stanza::GamePlugin;
 
 fn main() {
 	App::new()
+	.insert_resource(WindowDescriptor {
+		width: 350.,
+		height: 265.,
+		..Default::default()
+	})
 	.add_plugins(DefaultPlugins)
 	// .add_plugin(EditorPlugin)
 	// .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
