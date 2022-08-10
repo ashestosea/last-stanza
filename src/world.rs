@@ -12,35 +12,52 @@ impl Plugin for WorldPlugin {
     }
 }
 
+#[derive(Bundle)]
+struct WorldBundle {
+	#[bundle]
+    sprite_bundle: SpriteBundle,
+    rigidbody: RigidBody,
+    collision_shape: CollisionShape,
+    collision_layers: CollisionLayers,
+}
+
+impl Default for WorldBundle {
+    fn default() -> Self {
+        Self {
+            sprite_bundle: Default::default(),
+            rigidbody: RigidBody::Static,
+            collision_shape: Default::default(),
+            collision_layers: CollisionLayers::all_masks::<PhysicsLayers>()
+                .with_group(PhysicsLayers::Ground),
+        }
+    }
+}
+
 fn spawn_world(mut commands: Commands) {
     let step_height = 10.;
     let step_decrement = 32.;
     let step_count = 3;
-
+	let ground_color = Color::hsla(1., 1., 1., 1.);
+	
     // Ground
     let mut pos = Vec3::new(0., -20., 0.);
     let ground_shape = Vec2::new(1000., 30.);
-    commands
-        .spawn()
-        .insert_bundle(SpriteBundle {
+    commands.spawn().insert_bundle(WorldBundle {
+        sprite_bundle: SpriteBundle {
             sprite: Sprite {
-                color: Color::hsla(0.5, 1., 0.6, 1.),
+                color: ground_color,
                 custom_size: Some(ground_shape),
                 ..Default::default()
             },
             transform: Transform::from_translation(pos),
             ..Default::default()
-        })
-        .insert(CollisionShape::Cuboid {
+        },
+        collision_shape: CollisionShape::Cuboid {
             half_extends: ground_shape.extend(0.) / 2.,
             border_radius: None,
-        })
-        .insert(RigidBody::Static)
-        .insert(
-            CollisionLayers::none()
-                .with_group(PhysicsLayers::Ground)
-                .with_masks(&[PhysicsLayers::Debug, PhysicsLayers::Hopper]),
-        );
+        },
+        ..Default::default()
+    });
 
     let mut step_shape = Vec2::new(0., step_height);
     for i in 0..=step_count {
@@ -52,25 +69,21 @@ fn spawn_world(mut commands: Commands) {
         pos.y = step_height * i as f32;
 
         commands
-            .spawn()
-            .insert_bundle(SpriteBundle {
-                sprite: Sprite {
-                    color: Color::hsla(1., 1., 1., 1.),
-                    custom_size: Some(step_shape),
-                    ..Default::default()
-                },
-                transform: Transform::from_translation(pos),
-                ..Default::default()
-            })
-            .insert(CollisionShape::Cuboid {
-                half_extends: step_shape.extend(0.) / 2.,
-                border_radius: None,
-            })
-            .insert(RigidBody::Static)
-            .insert(
-                CollisionLayers::none()
-                    .with_group(PhysicsLayers::Ground)
-                    .with_masks(&[PhysicsLayers::Debug, PhysicsLayers::Hopper]),
-            );
+            .spawn().insert_bundle(WorldBundle {
+		        sprite_bundle: SpriteBundle {
+		            sprite: Sprite {
+		                color: ground_color,
+		                custom_size: Some(step_shape),
+		                ..Default::default()
+		            },
+		            transform: Transform::from_translation(pos),
+		            ..Default::default()
+		        },
+		        collision_shape: CollisionShape::Cuboid {
+		            half_extends: step_shape.extend(0.) / 2.,
+		            border_radius: None,
+		        },
+		        ..Default::default()
+		    });
     }
 }
