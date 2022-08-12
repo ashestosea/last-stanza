@@ -10,21 +10,18 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(MouseData {
             world_pos: Vec2::ZERO,
-            angle: 0.
+            vec_from_player: Vec2::Y,
         })
         .add_system_set(SystemSet::on_enter(GameState::Playing).with_system(spawn_player))
         .add_system_set(SystemSet::on_enter(GameState::Playing).with_system(spawn_projectile))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(mouse_move))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(start_aim))
+        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(mouse_input))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(aim))
-        ;
+        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(launch));
     }
 }
 
 #[derive(Component)]
-struct Player {
-    angle: f32,
-}
+struct Player;
 
 #[derive(Component)]
 struct PlayerProjectile {
@@ -34,10 +31,13 @@ struct PlayerProjectile {
 #[derive(Component)]
 struct Charging;
 
+#[derive(Component)]
+struct Fired;
+
 #[derive(Default)]
 struct MouseData {
     world_pos: Vec2,
-    angle: f32,
+    vec_from_player: Vec2,
 }
 
 fn spawn_player(mut commands: Commands) {
@@ -52,7 +52,7 @@ fn spawn_player(mut commands: Commands) {
             transform: Transform::from_translation(PLAYER_CENTER.extend(0.)),
             ..Default::default()
         })
-        .insert(Player { angle: 0. });
+        .insert(Player);
 }
 
 fn spawn_projectile(mut commands: Commands) {
@@ -80,63 +80,37 @@ fn spawn_projectile(mut commands: Commands) {
         });
 }
 
-fn start_aim(
-    mut commands: Commands,
-    mouse_data: Res<MouseData>,
-    input: Res<Input<MouseButton>>,
-    mut query: Query<(Entity, &mut PlayerProjectile, &mut Impulse)>
-) {
-    if input.just_pressed(MouseButton::Left) {
-        let (entity, projectile, impulse) = query.single_mut();
-        commands
-            .entity(entity)
-            .insert(Charging)
-            .insert(Velocity::from_linear(Vec3::ZERO));
-    } else if input.just_released(MouseButton::Left) {
-        let (entity, projectile, mut impulse) = query.single_mut();
-
-        let t = Vec2::Y;
-        let result: Vec2 = Vec2::new(
-            (mouse_data.angle.cos() * t.x) + (-mouse_data.angle.sin() * t.y),
-            (mouse_data.angle.sin() * t.x) + (mouse_data.angle.cos() * t.y),
-        );
-
-        commands
-            .entity(entity)
-            .remove::<Velocity>()
-            .remove::<Charging>();
-        
-        impulse.linear = result.extend(0.).normalize() * 50.;
-    }
-}
-
 fn aim(
     mouse_data: Res<MouseData>,
-    player_query: Query<&mut Player>,
-    mut proj_query: Query<(&mut PlayerProjectile, &mut Transform, &mut Charging)>,
+    mut proj_query: Query<(&mut PlayerProjectile, &mut Transform), With<Charging>>,
 ) {
-    if proj_query.is_empty() {
-        return;
+    for (mut proj, mut proj_trans) in proj_query.iter_mut() {
+        proj_trans.translation = (5. * mouse_data.vec_from_player + PLAYER_CENTER).extend(0.);
     }
-
-    let (mut projectile, mut projectile_trans, mut charging) = proj_query.single_mut();
-
-    let t = Vec2::Y;
-    let result: Vec2 = Vec2::new(
-        (mouse_data.angle.cos() * t.x) + (-mouse_data.angle.sin() * t.y),
-        (mouse_data.angle.sin() * t.x) + (mouse_data.angle.cos() * t.y),
-    );
-
-    projectile_trans.translation = 5. * result.extend(0.) + PLAYER_CENTER.extend(0.);
 }
 
-fn mouse_move(
+fn launch(
+    mut commands: Commands,
+    mouse_data: Res<MouseData>,
+    mut query: Query<(Entity, &mut Impulse), (With<PlayerProjectile>, With<Fired>)>,
+) {
+    for (entity, mut impulse) in query.iter_mut() {
+        impulse.linear = mouse_data.vec_from_player.extend(0.) * 50.;
+
+        commands.entity(entity).remove::<Fired>();
+    }
+}
+
+fn mouse_input(
     windows: Res<Windows>,
-    query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    input: Res<Input<MouseButton>>,
+    cam_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    proj_query: Query<Entity, With<PlayerProjectile>>,
+    mut commands: Commands,
     mut mouse_data: ResMut<MouseData>,
     mut events: EventReader<CursorMoved>,
 ) {
-    let (camera, camera_transform) = query.single();
+    let (camera, camera_transform) = cam_query.single();
 
     let window = if let RenderTarget::Window(id) = camera.target {
         windows.get(id).unwrap()
@@ -157,8 +131,23 @@ fn mouse_move(
     let cross = (a.x * b.y) - (a.y * b.x);
 
     if cross < 0. {
-        angle = angle * -1.;
+        angle *= -1.;
     }
 
-    mouse_data.angle = angle;
+    mouse_data.vec_from_player = Vec2::from_angle(angle).rotate(Vec2::Y).normalize();
+
+    if input.just_pressed(MouseButton::Left) {
+        let entity = proj_query.single();
+        commands
+            .entity(entity)
+            .insert(Charging)
+            .insert(Velocity::from_linear(Vec3::ZERO));
+    } else if input.just_released(MouseButton::Left) {
+        let entity = proj_query.single();
+        commands
+            .entity(entity)
+            .remove::<Velocity>()
+            .remove::<Charging>()
+            .insert(Fired);
+    }
 }
