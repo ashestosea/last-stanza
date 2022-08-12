@@ -42,12 +42,13 @@ impl Plugin for GamePlugin {
     }
 }
 
+#[allow(unused)]
 #[derive(PhysicsLayer)]
 enum PhysicsLayers {
     Ground,
-	Enemy,
+    Enemy,
     Hopper,
-	PProj,
+    PProj,
     Debug,
 }
 
@@ -58,7 +59,7 @@ struct DynamicActorBundle {
     shape: CollisionShape,
     layers: CollisionLayers,
     collisions: Collisions,
-    impulse: Impulse
+    impulse: Impulse,
 }
 
 impl Default for DynamicActorBundle {

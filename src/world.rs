@@ -14,7 +14,7 @@ impl Plugin for WorldPlugin {
 
 #[derive(Bundle)]
 struct WorldBundle {
-	#[bundle]
+    #[bundle]
     sprite_bundle: SpriteBundle,
     rigidbody: RigidBody,
     collision_shape: CollisionShape,
@@ -37,8 +37,8 @@ fn spawn_world(mut commands: Commands) {
     let step_height = 10.;
     let step_decrement = 32.;
     let step_count = 3;
-	let ground_color = Color::hsla(1., 1., 1., 1.);
-	
+    let ground_color = Color::hsla(1., 1., 1., 1.);
+
     // Ground
     let mut pos = Vec3::new(0., -20., 0.);
     let ground_shape = Vec2::new(1000., 30.);
@@ -68,22 +68,21 @@ fn spawn_world(mut commands: Commands) {
         }
         pos.y = step_height * i as f32;
 
-        commands
-            .spawn().insert_bundle(WorldBundle {
-		        sprite_bundle: SpriteBundle {
-		            sprite: Sprite {
-		                color: ground_color,
-		                custom_size: Some(step_shape),
-		                ..Default::default()
-		            },
-		            transform: Transform::from_translation(pos),
-		            ..Default::default()
-		        },
-		        collision_shape: CollisionShape::Cuboid {
-		            half_extends: step_shape.extend(0.) / 2.,
-		            border_radius: None,
-		        },
-		        ..Default::default()
-		    });
+        commands.spawn().insert_bundle(WorldBundle {
+            sprite_bundle: SpriteBundle {
+                sprite: Sprite {
+                    color: ground_color,
+                    custom_size: Some(step_shape),
+                    ..Default::default()
+                },
+                transform: Transform::from_translation(pos),
+                ..Default::default()
+            },
+            collision_shape: CollisionShape::Cuboid {
+                half_extends: step_shape.extend(0.) / 2.,
+                border_radius: None,
+            },
+            ..Default::default()
+        });
     }
 }

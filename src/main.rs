@@ -1,10 +1,7 @@
-use bevy::{
-    prelude::*,
-    window::{PresentMode, WindowMode},
-};
+use bevy::prelude::*;
 // use bevy_inspector_egui::egui::Key;
 // use bevy_editor_pls::*;
-use last_stanza::{GamePlugin};
+use last_stanza::GamePlugin;
 
 fn main() {
     App::new()

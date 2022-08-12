@@ -91,7 +91,11 @@ fn enemy_spawner(mut commands: Commands, time: Res<Time>, mut duration: Local<Du
                 },
                 layers: CollisionLayers::none()
                     .with_groups(&[PhysicsLayers::Enemy, PhysicsLayers::Hopper])
-                    .with_masks(&[PhysicsLayers::Ground, PhysicsLayers::Hopper, PhysicsLayers::PProj]),
+                    .with_masks(&[
+                        PhysicsLayers::Ground,
+                        PhysicsLayers::Hopper,
+                        PhysicsLayers::PProj,
+                    ]),
                 ..Default::default()
             })
             .insert(RotationConstraints::lock());

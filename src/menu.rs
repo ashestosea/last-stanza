@@ -27,15 +27,16 @@ impl Default for ButtonColors {
 }
 
 fn setup_menu(mut commands: Commands, button_colors: Res<ButtonColors>) {
-    commands.spawn_bundle(Camera2dBundle {
-        transform: Transform::from_translation(vec3(0., 35., 0.)),
-        projection: OrthographicProjection {
-            scaling_mode: ScalingMode::FixedHorizontal(150.),
+    commands
+        .spawn_bundle(Camera2dBundle {
+            transform: Transform::from_translation(vec3(0., 35., 0.)),
+            projection: OrthographicProjection {
+                scaling_mode: ScalingMode::FixedHorizontal(150.),
+                ..Default::default()
+            },
             ..Default::default()
-        },
-        ..Default::default()
-    })
-    .insert(MainCamera);
+        })
+        .insert(MainCamera);
 
     commands.spawn_bundle(ButtonBundle {
         style: Style {
