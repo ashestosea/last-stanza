@@ -1,4 +1,5 @@
 use crate::{GameState, MainCamera};
+use crate::loading::FontAssets;
 use bevy::{math::vec3, prelude::*, render::camera::ScalingMode};
 
 pub struct MenuPlugin;
@@ -26,7 +27,11 @@ impl Default for ButtonColors {
     }
 }
 
-fn setup_menu(mut commands: Commands, button_colors: Res<ButtonColors>) {
+fn setup_menu(
+    mut commands: Commands,
+    button_colors: Res<ButtonColors>,
+    font_assets: Res<FontAssets>,
+) {
     commands
         .spawn_bundle(Camera2dBundle {
             transform: Transform::from_translation(vec3(0., 35., 0.)),
@@ -48,23 +53,23 @@ fn setup_menu(mut commands: Commands, button_colors: Res<ButtonColors>) {
         },
         color: button_colors.normal,
         ..Default::default()
+    })
+    .with_children(|parent| {
+        parent.spawn_bundle(TextBundle {
+            text: Text {
+                sections: vec![TextSection {
+                    value: "Play".to_string(),
+                    style: TextStyle {
+                        font: font_assets.fantasque_sans.clone(),
+                        font_size: 40.0,
+                        color: Color::rgb(0.9, 0.9, 0.9),
+                    }
+                }],
+                alignment: Default::default(),
+            },
+            ..Default::default()
+        });
     });
-    // .with_children(|parent| {
-    //     parent.spawn_bundle(TextBundle {
-    //         text: Text {
-    //             sections: vec![TextSection {
-    //                 value: "Play".to_string(),
-    //                 style: TextStyle {
-    //                     // font: font_assets.fira_sans.clone(),
-    //                     font_size: 40.0,
-    //                     color: Color::rgb(0.9, 0.9, 0.9),
-    //                 }
-    //             }],
-    //             alignment: Default::default(),
-    //         },
-    //         ..Default::default()
-    //     });
-    // });
 }
 
 fn click_play_button(
