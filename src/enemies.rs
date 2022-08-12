@@ -75,8 +75,8 @@ fn enemy_spawner(mut commands: Commands, time: Res<Time>, mut duration: Local<Du
             .insert(Hop {
                 grounded: true,
                 power: Vec2::new(
-                    rand::thread_rng().gen_range(150.0..250.0),
-                    rand::thread_rng().gen_range(700.0..900.0),
+                    rand::thread_rng().gen_range(1.0..4.0),
+                    rand::thread_rng().gen_range(9.0..12.0),
                 ),
             })
             .insert_bundle(DynamicActorBundle {
@@ -91,19 +91,17 @@ fn enemy_spawner(mut commands: Commands, time: Res<Time>, mut duration: Local<Du
                 },
                 layers: CollisionLayers::none()
                     .with_groups(&[PhysicsLayers::Enemy, PhysicsLayers::Hopper])
-                    .with_masks(&[PhysicsLayers::Ground, PhysicsLayers::Hopper]),
+                    .with_masks(&[PhysicsLayers::Ground, PhysicsLayers::Hopper, PhysicsLayers::PProj]),
                 ..Default::default()
             })
             .insert(RotationConstraints::lock());
     }
 }
 
-fn hop(mut query: Query<(&mut Acceleration, &Hop)>) {
-    for (mut accel, hop) in query.iter_mut() {
+fn hop(mut query: Query<(&mut Impulse, &Hop)>) {
+    for (mut impulse, hop) in query.iter_mut() {
         if hop.grounded {
-            accel.linear = hop.power.extend(0.);
-        } else if accel.linear.length_squared() > 0. {
-            accel.linear = Vec3::ZERO;
+            impulse.linear = hop.power.extend(0.);
         }
     }
 }

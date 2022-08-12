@@ -1,8 +1,3 @@
-use std::{
-    f32::consts::{E, PI},
-    thread::AccessError,
-};
-
 use crate::{DynamicActorBundle, GameState, MainCamera, PhysicsLayers};
 use bevy::{prelude::*, render::camera::RenderTarget};
 use heron::prelude::*;
@@ -22,7 +17,6 @@ impl Plugin for PlayerPlugin {
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(mouse_move))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(start_aim))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(aim))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(projectile_accel))
         ;
     }
 }
@@ -82,7 +76,6 @@ fn spawn_projectile(mut commands: Commands) {
             },
             layers: CollisionLayers::new(PhysicsLayers::PProj, PhysicsLayers::Ground)
                 .with_mask(PhysicsLayers::Enemy),
-            acceleration: Acceleration::from_linear(Vec3::new(-1., -1., 0.)),
             ..Default::default()
         });
 }
@@ -91,18 +84,16 @@ fn start_aim(
     mut commands: Commands,
     mouse_data: Res<MouseData>,
     input: Res<Input<MouseButton>>,
-    mut query: Query<(Entity, &PlayerProjectile)>
+    mut query: Query<(Entity, &mut PlayerProjectile, &mut Impulse)>
 ) {
     if input.just_pressed(MouseButton::Left) {
-        let (mut entity, mut projectile) = query.single_mut();
+        let (entity, projectile, impulse) = query.single_mut();
         commands
             .entity(entity)
-            .remove::<RigidBody>()
-            .remove::<Acceleration>()
-            .insert(RigidBody::Static)
-            .insert(Charging);
+            .insert(Charging)
+            .insert(Velocity::from_linear(Vec3::ZERO));
     } else if input.just_released(MouseButton::Left) {
-        let (mut entity, mut projectile) = query.single_mut();
+        let (entity, projectile, mut impulse) = query.single_mut();
 
         let t = Vec2::Y;
         let result: Vec2 = Vec2::new(
@@ -112,31 +103,10 @@ fn start_aim(
 
         commands
             .entity(entity)
-            .remove::<RigidBody>()
-            .remove::<Charging>()
-            .insert(RigidBody::Dynamic)
-            .insert(Acceleration {
-                linear: result.extend(0.) * 1000.,
-                ..Default::default()
-            });
-    }
-}
-
-fn projectile_accel(
-    mut query: Query<&mut Acceleration, (With<PlayerProjectile>, Without<Charging>)>,
-    mut skip_a_frame: Local<bool>
-) {
-    for mut accel in query.iter_mut() {
-        if accel.linear.length_squared() > 0. {
-            if *skip_a_frame {
-                *skip_a_frame = false;
-                continue;
-            }
-            else {
-                *skip_a_frame = true;
-                accel.linear = Vec3::ZERO;
-            }
-        }
+            .remove::<Velocity>()
+            .remove::<Charging>();
+        
+        impulse.linear = result.extend(0.).normalize() * 50.;
     }
 }
 
@@ -191,19 +161,4 @@ fn mouse_move(
     }
 
     mouse_data.angle = angle;
-}
-
-fn place_projectile(
-    mut query: Query<&mut Transform, With<PlayerProjectile>>,
-    mouse_data: Res<MouseData>,
-    input: Res<Input<MouseButton>>,
-) {
-    for b in input.get_just_pressed() {
-        if *b == MouseButton::Left {
-            let mut transform = query
-                .get_single_mut()
-                .expect("Can't find player projectile");
-            transform.translation = mouse_data.world_pos.extend(0.);
-        }
-    }
 }
