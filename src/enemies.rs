@@ -46,7 +46,8 @@ impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_spawner))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hopper_grounding));
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hopper_grounding))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_destruction))
     }
 }
 
@@ -126,3 +127,17 @@ fn hopper_grounding(mut query: Query<(&mut Hop, &Collisions)>) {
         }
     }
 }
+
+fn enemy_destruction(
+    mut commands: Commands,
+    query: Query<(Entity, &Collisions), With<Enemy>>
+) {
+    for (entity, collisions) in query.iter() {
+        for c in collisions.collision_data() {
+            if c.collision_layers().contains_group(PhysicsLayers::PProj) {
+                commands.entity(entity).despawn();
+            }
+        }
+    }
+}
+

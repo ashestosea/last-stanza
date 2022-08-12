@@ -16,7 +16,8 @@ impl Plugin for PlayerPlugin {
         .add_system_set(SystemSet::on_enter(GameState::Playing).with_system(spawn_projectile))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(mouse_input))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(aim))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(launch));
+        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(launch))
+        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(projectile_destruction));
     }
 }
 
@@ -140,6 +141,7 @@ fn mouse_input(
         let entity = proj_query.single();
         commands
             .entity(entity)
+            .insert(RigidBody::Dynamic)
             .insert(Charging)
             .insert(Velocity::from_linear(Vec3::ZERO));
     } else if input.just_released(MouseButton::Left) {
@@ -149,5 +151,19 @@ fn mouse_input(
             .remove::<Velocity>()
             .remove::<Charging>()
             .insert(Fired);
+    }
+}
+
+fn projectile_destruction(
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut Transform, &Collisions), With<PlayerProjectile>>
+) {
+    for (entity, mut transform, collisions) in query.iter_mut() {
+        for c in collisions.collision_data() {
+            if c.collision_layers().contains_group(PhysicsLayers::Enemy) {
+                transform.translation = Vec3::NEG_Y * 50.;
+                commands.entity(entity).remove::<RigidBody>();
+            }
+        }
     }
 }
