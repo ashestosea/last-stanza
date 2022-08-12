@@ -1,6 +1,7 @@
 use crate::{GameState, PhysicsLayers};
 use bevy::prelude::*;
 use heron::prelude::*;
+use rand::Rng;
 
 pub struct WorldPlugin;
 
@@ -34,14 +35,14 @@ impl Default for WorldBundle {
 }
 
 fn spawn_world(mut commands: Commands) {
-    let step_height = 10.;
-    let step_decrement = 32.;
+    let step_height = 2.;
+    let step_decrement = 6.4;
     let step_count = 3;
     let ground_color = Color::hsla(1., 1., 1., 1.);
 
     // Ground
-    let mut pos = Vec3::new(0., -20., 0.);
-    let ground_shape = Vec2::new(1000., 30.);
+    let mut pos = Vec3::new(0., -4., 0.);
+    let ground_shape = Vec2::new(1000., 6.);
     commands.spawn().insert_bundle(WorldBundle {
         sprite_bundle: SpriteBundle {
             sprite: Sprite {

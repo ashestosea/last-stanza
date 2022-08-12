@@ -60,12 +60,12 @@ fn enemy_spawner(mut commands: Commands, time: Res<Time>, mut duration: Local<Du
             return;
         }
 
-        let enemy_shape = Vec2::new(6.0, 11.0);
+        let enemy_shape = Vec2::new(1., 2.);
         commands
             .spawn()
             .insert(Enemy)
             .insert_bundle(SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(-120., 5.5, 0.)),
+                transform: Transform::from_translation(Vec3::new(-24., 6., 0.)),
                 sprite: Sprite {
                     color: Color::BLACK,
                     custom_size: Some(enemy_shape),
@@ -76,15 +76,15 @@ fn enemy_spawner(mut commands: Commands, time: Res<Time>, mut duration: Local<Du
             .insert(Hop {
                 grounded: true,
                 power: Vec2::new(
-                    rand::thread_rng().gen_range(1.0..4.0),
-                    rand::thread_rng().gen_range(9.0..12.0),
+                    rand::thread_rng().gen_range(0.6..0.8),
+                    rand::thread_rng().gen_range(8.0..8.01),
                 ),
             })
             .insert_bundle(DynamicActorBundle {
                 material: PhysicMaterial {
                     density: 1.,
                     friction: 2.,
-                    restitution: 0.25,
+                    restitution: 0.01,
                 },
                 shape: CollisionShape::Cuboid {
                     half_extends: enemy_shape.extend(0.) / 2.,

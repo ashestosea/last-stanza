@@ -2,7 +2,7 @@ use crate::{DynamicActorBundle, GameState, MainCamera, PhysicsLayers};
 use bevy::{prelude::*, render::camera::RenderTarget};
 use heron::prelude::*;
 
-const PLAYER_CENTER: Vec2 = Vec2::new(0., 37.5);
+const PLAYER_CENTER: Vec2 = Vec2::new(0., 7.5);
 
 pub struct PlayerPlugin;
 
@@ -47,7 +47,7 @@ fn spawn_player(mut commands: Commands) {
             // texture: textures.texture_bevy.clone(),
             sprite: Sprite {
                 color: Color::RED,
-                custom_size: Some(Vec2::new(5., 5.)),
+                custom_size: Some(Vec2::new(0.75, 1.5)),
                 ..Default::default()
             },
             transform: Transform::from_translation(PLAYER_CENTER.extend(0.)),
@@ -61,7 +61,7 @@ fn spawn_projectile(mut commands: Commands) {
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: Color::GREEN,
-                custom_size: Some(Vec2::new(3., 3.)),
+                custom_size: Some(Vec2::new(0.3, 0.3)),
                 ..Default::default()
             },
             transform: Transform::from_translation(Vec3::new(-10., 45., 0.)),
@@ -69,7 +69,7 @@ fn spawn_projectile(mut commands: Commands) {
         })
         .insert(PlayerProjectile { size: 0.5 })
         .insert_bundle(DynamicActorBundle {
-            shape: CollisionShape::Sphere { radius: 3. },
+            shape: CollisionShape::Sphere { radius: 0.3 },
             material: PhysicMaterial {
                 friction: 0.,
                 restitution: 1.5,
@@ -86,7 +86,7 @@ fn aim(
     mut proj_query: Query<(&mut PlayerProjectile, &mut Transform), With<Charging>>,
 ) {
     for (mut proj, mut proj_trans) in proj_query.iter_mut() {
-        proj_trans.translation = (5. * mouse_data.vec_from_player + PLAYER_CENTER).extend(0.);
+        proj_trans.translation = (2. * mouse_data.vec_from_player + PLAYER_CENTER).extend(0.);
     }
 }
 
@@ -96,7 +96,7 @@ fn launch(
     mut query: Query<(Entity, &mut Impulse), (With<PlayerProjectile>, With<Fired>)>,
 ) {
     for (entity, mut impulse) in query.iter_mut() {
-        impulse.linear = mouse_data.vec_from_player.extend(0.) * 50.;
+        impulse.linear = mouse_data.vec_from_player.extend(0.) * 12.;
 
         commands.entity(entity).remove::<Fired>();
     }
