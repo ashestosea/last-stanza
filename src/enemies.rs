@@ -1,13 +1,15 @@
+use crate::player::PlayerProjectile;
 use crate::{DynamicActorBundle, GameState, PhysicsLayers};
 use bevy::prelude::*;
 use heron::prelude::*;
 use rand::Rng;
-use std::{ops::AddAssign, time::Duration};
 
 pub struct EnemiesPlugin;
 
 #[derive(Component)]
-struct Enemy;
+struct Enemy {
+    health: i32,
+}
 
 #[derive(Component)]
 struct Hopper;
@@ -45,7 +47,7 @@ impl Default for HopperBundle {
     fn default() -> Self {
         Self {
             sprite_bundle: Default::default(),
-            enemy: Enemy,
+            enemy: Enemy { health: 1 },
             hopper: Hopper,
             hop: Hop {
                 grounded: false,
@@ -85,7 +87,7 @@ struct Hop {
 }
 
 struct SpawnTimer {
-    timer: Timer
+    timer: Timer,
 }
 
 struct EnemySpawnChances {
@@ -124,7 +126,8 @@ impl Plugin for EnemiesPlugin {
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_spawner))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hopper_grounding))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_destruction))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health));
     }
 }
 
@@ -134,7 +137,7 @@ fn setup_enemy_spawns(mut commands: Commands) {
 
     commands.insert_resource(spawn_chances);
     commands.insert_resource(SpawnTimer {
-        timer: Timer::from_seconds(1., true)
+        timer: Timer::from_seconds(1., true),
     });
 }
 
@@ -197,13 +200,25 @@ fn hopper_grounding(mut query: Query<(&mut Hop, &Collisions)>) {
     }
 }
 
-fn enemy_destruction(mut commands: Commands, query: Query<(Entity, &Collisions), With<Enemy>>) {
-    for (entity, collisions) in query.iter() {
+fn enemy_hits(proj_query: Query<&PlayerProjectile>, mut query: Query<(&mut Enemy, &Collisions)>) {
+    if proj_query.is_empty() {
+        return;
+    }
+    let projectile = proj_query.single();
+    
+    for (mut enemy, collisions) in query.iter_mut() {
         for c in collisions.collision_data() {
             if c.collision_layers().contains_group(PhysicsLayers::PProj) {
-                commands.entity(entity).despawn();
+                enemy.health -= projectile.size;
             }
         }
     }
 }
 
+fn enemy_health(mut commands: Commands, query: Query<(Entity, &Enemy), Changed<Enemy>>) {
+    for (entity, enemy) in query.iter() {
+        if enemy.health <= 0 {
+            commands.entity(entity).despawn();
+        }
+    }
+}

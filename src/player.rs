@@ -25,8 +25,8 @@ impl Plugin for PlayerPlugin {
 struct Player;
 
 #[derive(Component)]
-struct PlayerProjectile {
-    size: f32,
+pub(crate) struct PlayerProjectile {
+    pub size: i32,
 }
 
 #[derive(Component)]
@@ -67,7 +67,7 @@ fn spawn_projectile(mut commands: Commands) {
             transform: Transform::from_translation(Vec3::new(-10., 45., 0.)),
             ..Default::default()
         })
-        .insert(PlayerProjectile { size: 0.5 })
+        .insert(PlayerProjectile { size: 1 })
         .insert_bundle(DynamicActorBundle {
             shape: CollisionShape::Sphere { radius: 0.3 },
             material: PhysicMaterial {
