@@ -17,7 +17,9 @@ impl Plugin for PlayerPlugin {
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(mouse_input))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(aim))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(launch))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(projectile_destruction));
+        .add_system_set(
+            SystemSet::on_update(GameState::Playing).with_system(projectile_destruction),
+        );
     }
 }
 
@@ -30,7 +32,9 @@ pub(crate) struct PlayerProjectile {
 }
 
 #[derive(Component)]
-struct Charging;
+struct Charging {
+    timer: Timer,
+}
 
 #[derive(Component)]
 struct Fired;
@@ -61,7 +65,7 @@ fn spawn_projectile(mut commands: Commands) {
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: Color::GREEN,
-                custom_size: Some(Vec2::new(0.3, 0.3)),
+                custom_size: Some(Vec2::new(1., 1.)),
                 ..Default::default()
             },
             transform: Transform::from_translation(Vec3::new(-10., 45., 0.)),
@@ -69,7 +73,7 @@ fn spawn_projectile(mut commands: Commands) {
         })
         .insert(PlayerProjectile { size: 1 })
         .insert_bundle(DynamicActorBundle {
-            shape: CollisionShape::Sphere { radius: 0.3 },
+            shape: CollisionShape::Sphere { radius: 1. },
             material: PhysicMaterial {
                 friction: 0.,
                 restitution: 1.5,
@@ -82,10 +86,15 @@ fn spawn_projectile(mut commands: Commands) {
 }
 
 fn aim(
+    time: Res<Time>,
     mouse_data: Res<MouseData>,
-    mut proj_query: Query<(&mut PlayerProjectile, &mut Transform), With<Charging>>,
+    mut proj_query: Query<(&mut PlayerProjectile, &mut Transform, &mut Charging)>,
 ) {
-    for (mut proj, mut proj_trans) in proj_query.iter_mut() {
+    for (mut proj, mut proj_trans, mut charge) in proj_query.iter_mut() {
+        charge.timer.tick(time.delta());
+        let c = (charge.timer.elapsed_secs().sin().powi(2) * 4.) + 1.;
+        proj.size = c.round() as i32;
+        proj_trans.scale = Vec3::ONE * 0.5 * proj.size as f32;
         proj_trans.translation = (2. * mouse_data.vec_from_player + PLAYER_CENTER).extend(0.);
     }
 }
@@ -142,7 +151,9 @@ fn mouse_input(
         commands
             .entity(entity)
             .insert(RigidBody::Dynamic)
-            .insert(Charging)
+            .insert(Charging {
+                timer: Timer::from_seconds(10., true),
+            })
             .insert(Velocity::from_linear(Vec3::ZERO));
     } else if input.just_released(MouseButton::Left) {
         let entity = proj_query.single();
@@ -156,7 +167,7 @@ fn mouse_input(
 
 fn projectile_destruction(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Transform, &Collisions), With<PlayerProjectile>>
+    mut query: Query<(Entity, &mut Transform, &Collisions), With<PlayerProjectile>>,
 ) {
     for (entity, mut transform, collisions) in query.iter_mut() {
         for c in collisions.collision_data() {
