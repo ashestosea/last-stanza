@@ -94,7 +94,7 @@ fn aim(
         charge.timer.tick(time.delta());
         let c = (charge.timer.elapsed_secs().sin().powi(2) * 4.) + 1.;
         proj.size = c.round() as i32;
-        proj_trans.scale = Vec3::ONE * 0.5 * proj.size as f32;
+        proj_trans.scale = Vec3::ONE * (0.5 + (0.05 * proj.size as f32));
         proj_trans.translation = (2. * mouse_data.vec_from_player + PLAYER_CENTER).extend(0.);
     }
 }
