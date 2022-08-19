@@ -150,17 +150,18 @@ fn mouse_input(
         let entity = proj_query.single();
         commands
             .entity(entity)
-            .insert(RigidBody::Dynamic)
+            .remove::<RigidBody>()
+            .insert(RigidBody::Static)
             .insert(Charging {
                 timer: Timer::from_seconds(10., true),
-            })
-            .insert(Velocity::from_linear(Vec3::ZERO));
+            });
     } else if input.just_released(MouseButton::Left) {
         let entity = proj_query.single();
         commands
             .entity(entity)
-            .remove::<Velocity>()
+            .remove::<RigidBody>()
             .remove::<Charging>()
+            .insert(RigidBody::Dynamic)
             .insert(Fired);
     }
 }
