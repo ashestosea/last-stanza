@@ -36,6 +36,7 @@ struct HopperBundle {
     #[bundle]
     dynamic_actor_bundle: DynamicActorBundle,
     rotation_constraints: RotationConstraints,
+    velocity: Velocity,
     enemy: Enemy,
     hopper: Hopper,
     hop: Hop,
@@ -76,6 +77,7 @@ impl Default for HopperBundle {
                 ..Default::default()
             },
             rotation_constraints: RotationConstraints::lock(),
+            velocity: Velocity::from_linear(Vec3::ZERO),
         }
     }
 }
@@ -126,6 +128,7 @@ impl Plugin for EnemiesPlugin {
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_spawner))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hopper_grounding))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hopper_nudge))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health));
     }
@@ -160,18 +163,20 @@ fn enemy_spawner(
     }
     chance += spawn_chances.hopper;
     if rng < chance {
-        commands.spawn().insert_bundle(HopperBundle {
-            sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(-24., 6., 0.)),
-                sprite: Sprite {
-                    color: Color::BLACK,
-                    custom_size: Some(HOPPER_SHAPE),
-                    ..default()
+        commands
+            .spawn()
+            .insert_bundle(HopperBundle {
+                sprite_bundle: SpriteBundle {
+                    transform: Transform::from_translation(Vec3::new(-24., 6., 0.)),
+                    sprite: Sprite {
+                        color: Color::BLACK,
+                        custom_size: Some(HOPPER_SHAPE),
+                        ..default()
+                    },
+                    ..Default::default()
                 },
                 ..Default::default()
-            },
-            ..Default::default()
-        });
+            });
     }
 }
 
@@ -200,12 +205,22 @@ fn hopper_grounding(mut query: Query<(&mut Hop, &Collisions)>) {
     }
 }
 
+fn hopper_nudge(mut query: Query<(&Velocity, &Collisions, &mut Impulse), With<Hop>>) {
+    for (vel, collisions, mut impulse) in query.iter_mut() {
+        if collisions.is_empty() {
+            if vel.linear.x < 0.1 && (vel.linear.y).abs() < 0.1 {
+                impulse.linear = Vec3::X * 2.;
+            }
+        }
+    }
+}
+
 fn enemy_hits(proj_query: Query<&PlayerProjectile>, mut query: Query<(&mut Enemy, &Collisions)>) {
     if proj_query.is_empty() {
         return;
     }
     let projectile = proj_query.single();
-    
+
     for (mut enemy, collisions) in query.iter_mut() {
         for c in collisions.collision_data() {
             if c.collision_layers().contains_group(PhysicsLayers::PProj) {
