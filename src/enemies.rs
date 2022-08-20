@@ -6,9 +6,25 @@ use rand::Rng;
 
 pub struct EnemiesPlugin;
 
+#[derive(PartialEq, Eq, Clone, Copy)]
+enum Facing {
+    Left,
+    Right,
+}
+
 #[derive(Component)]
 struct Enemy {
     health: i32,
+    facing: Facing,
+}
+
+impl Default for Enemy {
+    fn default() -> Self {
+        Self {
+            health: Default::default(),
+            facing: Facing::Left,
+        }
+    }
 }
 
 #[derive(Component)]
@@ -48,15 +64,9 @@ impl Default for HopperBundle {
     fn default() -> Self {
         Self {
             sprite_bundle: Default::default(),
-            enemy: Enemy { health: 1 },
+            enemy: Enemy::default(),
             hopper: Hopper,
-            hop: Hop {
-                grounded: false,
-                power: Vec2::new(
-                    rand::thread_rng().gen_range(0.6..0.8),
-                    rand::thread_rng().gen_range(6.0..6.01),
-                ),
-            },
+            hop: Hop::default(),
             dynamic_actor_bundle: DynamicActorBundle {
                 material: PhysicMaterial {
                     density: 1.,
@@ -86,6 +96,15 @@ impl Default for HopperBundle {
 struct Hop {
     grounded: bool,
     power: Vec2,
+}
+
+impl Default for Hop {
+    fn default() -> Self {
+        Self {
+            grounded: false,
+            power: Default::default(),
+        }
+    }
 }
 
 struct SpawnTimer {
@@ -128,7 +147,6 @@ impl Plugin for EnemiesPlugin {
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_spawner))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hopper_grounding))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hopper_nudge))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health));
     }
@@ -136,7 +154,7 @@ impl Plugin for EnemiesPlugin {
 
 fn setup_enemy_spawns(mut commands: Commands) {
     let mut spawn_chances = EnemySpawnChances::default();
-    spawn_chances.hopper = 0.1;
+    spawn_chances.hopper = 0.2;
 
     commands.insert_resource(spawn_chances);
     commands.insert_resource(SpawnTimer {
@@ -156,35 +174,47 @@ fn enemy_spawner(
         return;
     }
 
+    let (facing, start_mul) = if rand::thread_rng().gen_bool(0.5) {
+        (Facing::Left, -1.)
+    } else {
+        (Facing::Right, 1.)
+    };
+
     let rng = rand::thread_rng().gen_range(0f32..1f32);
-    let mut chance = spawn_chances.none();
-    if rng < chance {
+    let mut total_chance = spawn_chances.none();
+
+    let start_x = 24. * start_mul;
+
+    // Nothing
+    if rng < total_chance {
         return;
     }
-    chance += spawn_chances.hopper;
-    if rng < chance {
-        commands
-            .spawn()
-            .insert_bundle(HopperBundle {
-                sprite_bundle: SpriteBundle {
-                    transform: Transform::from_translation(Vec3::new(-24., 6., 0.)),
-                    sprite: Sprite {
-                        color: Color::BLACK,
-                        custom_size: Some(HOPPER_SHAPE),
-                        ..default()
-                    },
-                    ..Default::default()
+
+    // Hopper
+    total_chance += spawn_chances.hopper;
+    if rng < total_chance {
+        let power = Vec2::new(
+            rand::thread_rng().gen_range(0.6..0.8) * -start_mul,
+            rand::thread_rng().gen_range(6.0..6.01),
+        );
+        println!("spawning enemy with power {}", power);
+        commands.spawn().insert_bundle(HopperBundle {
+            enemy: Enemy { health: 1, facing },
+            hop: Hop {
+                grounded: false,
+                power,
+            },
+            sprite_bundle: SpriteBundle {
+                transform: Transform::from_translation(Vec3::new(start_x, 6., 0.)),
+                sprite: Sprite {
+                    color: Color::BLACK,
+                    custom_size: Some(HOPPER_SHAPE),
+                    ..default()
                 },
                 ..Default::default()
-            });
-    }
-}
-
-fn hop(mut query: Query<(&mut Impulse, &Hop)>) {
-    for (mut impulse, hop) in query.iter_mut() {
-        if hop.grounded {
-            impulse.linear = hop.power.extend(0.);
-        }
+            },
+            ..Default::default()
+        });
     }
 }
 
@@ -205,11 +235,19 @@ fn hopper_grounding(mut query: Query<(&mut Hop, &Collisions)>) {
     }
 }
 
-fn hopper_nudge(mut query: Query<(&Velocity, &Collisions, &mut Impulse), With<Hop>>) {
-    for (vel, collisions, mut impulse) in query.iter_mut() {
-        if collisions.is_empty() {
-            if vel.linear.x < 0.1 && (vel.linear.y).abs() < 0.1 {
-                impulse.linear = Vec3::X * 2.;
+fn hop(mut query: Query<(&Enemy, &Velocity, &Collisions, &Hop, &mut Impulse)>) {
+    for (enemy, vel, collisions, hop, mut impulse) in query.iter_mut() {
+        if hop.grounded {
+            impulse.linear = hop.power.extend(0.);
+        } else if collisions.is_empty() {
+            // Nudge Hopper if it's stalled out
+            if vel.linear.x.abs() < 0.1 && vel.linear.y.abs() < 0.1 {
+                let mul = if enemy.facing == Facing::Left {
+                    1.
+                } else {
+                    -1.
+                };
+                impulse.linear = Vec3::X * 2. * mul;
             }
         }
     }
