@@ -62,7 +62,7 @@ struct DynamicActorBundle {
     shape: CollisionShape,
     layers: CollisionLayers,
     collisions: Collisions,
-    impulse: Impulse,
+    velocity: Velocity,
 }
 
 impl Default for DynamicActorBundle {
@@ -73,7 +73,7 @@ impl Default for DynamicActorBundle {
             shape: Default::default(),
             layers: Default::default(),
             collisions: Default::default(),
-            impulse: Default::default(),
+            velocity: Default::default(),
         }
     }
 }

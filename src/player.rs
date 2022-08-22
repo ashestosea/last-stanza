@@ -102,10 +102,10 @@ fn aim(
 fn launch(
     mut commands: Commands,
     mouse_data: Res<MouseData>,
-    mut query: Query<(Entity, &mut Impulse), (With<PlayerProjectile>, With<Fired>)>,
+    mut query: Query<(Entity, &mut Velocity), (With<PlayerProjectile>, With<Fired>)>,
 ) {
-    for (entity, mut impulse) in query.iter_mut() {
-        impulse.linear = mouse_data.vec_from_player.extend(0.) * 12.;
+    for (entity, mut vel) in query.iter_mut() {
+        vel.linear = mouse_data.vec_from_player.extend(0.) * 12.;
 
         commands.entity(entity).remove::<Fired>();
     }

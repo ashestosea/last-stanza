@@ -235,10 +235,10 @@ fn hopper_grounding(mut query: Query<(&mut Hop, &Collisions)>) {
     }
 }
 
-fn hop(mut query: Query<(&Enemy, &Velocity, &Collisions, &Hop, &mut Impulse)>) {
-    for (enemy, vel, collisions, hop, mut impulse) in query.iter_mut() {
+fn hop(mut query: Query<(&Enemy, &mut Velocity, &Collisions, &Hop)>) {
+    for (enemy, mut vel, collisions, hop) in query.iter_mut() {
         if hop.grounded {
-            impulse.linear = hop.power.extend(0.);
+            vel.linear = hop.power.extend(0.);
         } else if collisions.is_empty() {
             // Nudge Hopper if it's stalled out
             if vel.linear.x.abs() < 0.1 && vel.linear.y.abs() < 0.1 {
@@ -247,7 +247,7 @@ fn hop(mut query: Query<(&Enemy, &Velocity, &Collisions, &Hop, &mut Impulse)>) {
                 } else {
                     -1.
                 };
-                impulse.linear = Vec3::X * 2. * mul;
+                vel.linear = Vec3::X * 2. * mul;
             }
         }
     }
