@@ -1,4 +1,6 @@
+mod climber;
 mod enemies;
+mod hopper;
 mod loading;
 mod menu;
 mod player;
@@ -51,6 +53,7 @@ enum PhysicsLayers {
     Ground,
     Enemy,
     Hopper,
+    Climber,
     PProj,
     Debug,
 }

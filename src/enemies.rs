@@ -1,5 +1,7 @@
 use crate::player::PlayerProjectile;
-use crate::{DynamicActorBundle, GameState, PhysicsLayers};
+use crate::hopper::{HopperBundle, HOPPER_SHAPE};
+use crate::climber::{ClimberBundle, CLIMBER_SHAPE};
+use crate::{GameState, PhysicsLayers};
 use bevy::prelude::*;
 use heron::prelude::*;
 use rand::Rng;
@@ -13,7 +15,7 @@ enum Facing {
 }
 
 #[derive(Component)]
-struct Enemy {
+pub(crate) struct Enemy {
     health: i32,
     facing: Facing,
 }
@@ -28,12 +30,6 @@ impl Default for Enemy {
 }
 
 #[derive(Component)]
-struct Hopper;
-
-#[derive(Component)]
-struct Climber;
-
-#[derive(Component)]
 struct Sneaker;
 
 #[derive(Component)]
@@ -45,53 +41,8 @@ struct Giant;
 #[derive(Component)]
 struct Behemoth;
 
-#[derive(Bundle)]
-struct HopperBundle {
-    #[bundle]
-    sprite_bundle: SpriteBundle,
-    #[bundle]
-    dynamic_actor_bundle: DynamicActorBundle,
-    rotation_constraints: RotationConstraints,
-    enemy: Enemy,
-    hopper: Hopper,
-    hop: Hop,
-}
-
-const HOPPER_SHAPE: Vec2 = Vec2::new(1., 2.);
-
-impl Default for HopperBundle {
-    fn default() -> Self {
-        Self {
-            sprite_bundle: Default::default(),
-            enemy: Enemy::default(),
-            hopper: Hopper,
-            hop: Hop::default(),
-            dynamic_actor_bundle: DynamicActorBundle {
-                material: PhysicMaterial {
-                    density: 1.,
-                    friction: 2.,
-                    restitution: 0.2,
-                },
-                shape: CollisionShape::Cuboid {
-                    half_extends: HOPPER_SHAPE.extend(0.) / 2.,
-                    border_radius: None,
-                },
-                layers: CollisionLayers::none()
-                    .with_groups(&[PhysicsLayers::Enemy, PhysicsLayers::Hopper])
-                    .with_masks(&[
-                        PhysicsLayers::Ground,
-                        PhysicsLayers::Hopper,
-                        PhysicsLayers::PProj,
-                    ]),
-                ..Default::default()
-            },
-            rotation_constraints: RotationConstraints::lock(),
-        }
-    }
-}
-
 #[derive(Component)]
-struct Hop {
+pub(crate) struct Hop {
     grounded: bool,
     power: Vec2,
 }
@@ -152,7 +103,8 @@ impl Plugin for EnemiesPlugin {
 
 fn setup_enemy_spawns(mut commands: Commands) {
     let mut spawn_chances = EnemySpawnChances::default();
-    spawn_chances.hopper = 0.2;
+    spawn_chances.hopper = 0.1;
+    spawn_chances.climber = 0.1;
 
     commands.insert_resource(spawn_chances);
     commands.insert_resource(SpawnTimer {
@@ -194,8 +146,8 @@ fn enemy_spawner(
         let power = Vec2::new(
             rand::thread_rng().gen_range(1.0..2.0) * -start_mul,
             rand::thread_rng().gen_range(15.0..15.01),
-        );
-        println!("spawning enemy with power {}", power);
+        ); 
+        
         commands.spawn().insert_bundle(HopperBundle {
             enemy: Enemy { health: 1, facing },
             hop: Hop {
@@ -207,6 +159,24 @@ fn enemy_spawner(
                 sprite: Sprite {
                     color: Color::BLACK,
                     custom_size: Some(HOPPER_SHAPE),
+                    ..default()
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        });
+    }
+
+    // Climber
+    total_chance += spawn_chances.climber;
+    if rng < total_chance {
+        commands.spawn().insert_bundle(ClimberBundle {
+            enemy: Enemy { health: 1, facing },
+            sprite_bundle: SpriteBundle {
+                transform: Transform::from_translation(Vec3::new(start_x, 6., 0.)),
+                sprite: Sprite {
+                    color: Color::BLACK,
+                    custom_size: Some(CLIMBER_SHAPE),
                     ..default()
                 },
                 ..Default::default()
