@@ -52,7 +52,6 @@ struct HopperBundle {
     #[bundle]
     dynamic_actor_bundle: DynamicActorBundle,
     rotation_constraints: RotationConstraints,
-    velocity: Velocity,
     enemy: Enemy,
     hopper: Hopper,
     hop: Hop,
@@ -87,7 +86,6 @@ impl Default for HopperBundle {
                 ..Default::default()
             },
             rotation_constraints: RotationConstraints::lock(),
-            velocity: Velocity::from_linear(Vec3::ZERO),
         }
     }
 }
@@ -194,8 +192,8 @@ fn enemy_spawner(
     total_chance += spawn_chances.hopper;
     if rng < total_chance {
         let power = Vec2::new(
-            rand::thread_rng().gen_range(0.6..0.8) * -start_mul,
-            rand::thread_rng().gen_range(6.0..6.01),
+            rand::thread_rng().gen_range(1.0..2.0) * -start_mul,
+            rand::thread_rng().gen_range(15.0..15.01),
         );
         println!("spawning enemy with power {}", power);
         commands.spawn().insert_bundle(HopperBundle {
