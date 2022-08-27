@@ -1,25 +1,25 @@
 use crate::{
     enemies::{Enemy, Facing},
-    DynamicActorBundle, PhysicsLayers, GameState,
+    DynamicActorBundle, GameState, PhysicsLayers,
 };
 use bevy::prelude::*;
 use heron::prelude::*;
+
+const CLIMBER_SHAPE: Vec2 = Vec2::new(1., 2.);
 
 #[derive(Component)]
 pub(crate) struct Climber;
 
 #[derive(Bundle)]
-pub(crate) struct ClimberBundle {
+struct ClimberBundle {
     #[bundle]
-    pub(crate) sprite_bundle: SpriteBundle,
+    sprite_bundle: SpriteBundle,
     #[bundle]
-    pub(crate) dynamic_actor_bundle: DynamicActorBundle,
-    pub(crate) rotation_constraints: RotationConstraints,
-    pub(crate) enemy: Enemy,
-    pub(crate) clibmer: Climber,
+    dynamic_actor_bundle: DynamicActorBundle,
+    rotation_constraints: RotationConstraints,
+    enemy: Enemy,
+    clibmer: Climber,
 }
-
-pub(crate) const CLIMBER_SHAPE: Vec2 = Vec2::new(1., 2.);
 
 pub struct ClimberPlugin;
 
@@ -34,11 +34,10 @@ impl Climber {
         let facing_mul: f32 = facing.into();
 
         commands.spawn().insert_bundle(ClimberBundle {
-            enemy: Enemy { health: 1, facing },
             sprite_bundle: SpriteBundle {
                 transform: Transform::from_translation(Vec3::new(start_x, 0., 0.)),
                 sprite: Sprite {
-                    color: Color::BISQUE,
+                    color: Color::MIDNIGHT_BLUE,
                     custom_size: Some(CLIMBER_SHAPE),
                     ..default()
                 },
@@ -66,12 +65,13 @@ impl Climber {
                 ..Default::default()
             },
             rotation_constraints: RotationConstraints::lock(),
+            enemy: Enemy { health: 1, facing },
             clibmer: Climber,
         });
     }
 }
 
-pub(crate) fn climb(mut query: Query<(&mut Velocity, &Collisions, &Enemy), With<Climber>>) {
+fn climb(mut query: Query<(&mut Velocity, &Collisions, &Enemy), With<Climber>>) {
     for (mut velocity, collision, enemy) in query.iter_mut() {
         for data in collision.collision_data() {
             if data

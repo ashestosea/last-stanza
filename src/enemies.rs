@@ -1,5 +1,5 @@
 use crate::climber::{Climber, ClimberPlugin};
-use crate::hopper::{Hopper, HopperPlugin};
+use crate::hopper::Hopper;
 use crate::player::PlayerProjectile;
 use crate::{GameState, PhysicsLayers};
 use bevy::prelude::*;
@@ -94,9 +94,9 @@ impl Plugin for EnemiesPlugin {
         app.add_system_set(SystemSet::on_enter(GameState::Playing).with_system(setup_enemy_spawns))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_spawner))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop_grounding))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health))
-            .add_plugin(HopperPlugin)
             .add_plugin(ClimberPlugin);
     }
 }
@@ -166,6 +166,23 @@ fn hop(mut query: Query<(&Enemy, &mut Velocity, &Collisions, &Hop)>) {
             if vel.linear.x.abs() < 0.1 && vel.linear.y.abs() < 0.1 {
                 let mul: f32 = enemy.facing.into();
                 vel.linear = Vec3::X * 2. * mul;
+            }
+        }
+    }
+}
+
+fn hop_grounding(mut query: Query<(&mut Hop, &Collisions)>) {
+    for (mut hop, collisions) in query.iter_mut() {
+        hop.grounded = false;
+
+        for c in collisions.collision_data() {
+            if c.collision_layers().contains_group(PhysicsLayers::Ground) {
+                for n in c.normals() {
+                    if *n == Vec3::Y {
+                        hop.grounded = true;
+                        return;
+                    }
+                }
             }
         }
     }
