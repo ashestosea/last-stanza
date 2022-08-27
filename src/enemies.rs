@@ -1,6 +1,6 @@
-use crate::player::PlayerProjectile;
+use crate::climber::climb;
 use crate::hopper::{HopperBundle, HOPPER_SHAPE};
-use crate::climber::{ClimberBundle, CLIMBER_SHAPE};
+use crate::player::PlayerProjectile;
 use crate::{GameState, PhysicsLayers};
 use bevy::prelude::*;
 use heron::prelude::*;
@@ -9,15 +9,25 @@ use rand::Rng;
 pub struct EnemiesPlugin;
 
 #[derive(PartialEq, Eq, Clone, Copy)]
-enum Facing {
+pub(crate) enum Facing {
     Left,
     Right,
 }
 
+impl From<Facing> for f32 {
+    fn from(val: Facing) -> Self {
+        if val == Facing::Left {
+            1.
+        } else {
+            -1.
+        }
+    }
+}
+
 #[derive(Component)]
 pub(crate) struct Enemy {
-    health: i32,
-    facing: Facing,
+    pub health: i32,
+    pub facing: Facing,
 }
 
 impl Default for Enemy {
@@ -41,19 +51,10 @@ struct Giant;
 #[derive(Component)]
 struct Behemoth;
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub(crate) struct Hop {
     grounded: bool,
     power: Vec2,
-}
-
-impl Default for Hop {
-    fn default() -> Self {
-        Self {
-            grounded: false,
-            power: Default::default(),
-        }
-    }
 }
 
 struct SpawnTimer {
@@ -96,15 +97,18 @@ impl Plugin for EnemiesPlugin {
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_spawner))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hopper_grounding))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(climb))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health));
     }
 }
 
 fn setup_enemy_spawns(mut commands: Commands) {
-    let mut spawn_chances = EnemySpawnChances::default();
-    spawn_chances.hopper = 0.1;
-    spawn_chances.climber = 0.1;
+    let spawn_chances = EnemySpawnChances {
+        hopper: 0.1,
+        climber: 0.1,
+        ..Default::default()
+    };
 
     commands.insert_resource(spawn_chances);
     commands.insert_resource(SpawnTimer {
@@ -146,8 +150,8 @@ fn enemy_spawner(
         let power = Vec2::new(
             rand::thread_rng().gen_range(1.0..2.0) * -start_mul,
             rand::thread_rng().gen_range(15.0..15.01),
-        ); 
-        
+        );
+
         commands.spawn().insert_bundle(HopperBundle {
             enemy: Enemy { health: 1, facing },
             hop: Hop {
@@ -170,19 +174,7 @@ fn enemy_spawner(
     // Climber
     total_chance += spawn_chances.climber;
     if rng < total_chance {
-        commands.spawn().insert_bundle(ClimberBundle {
-            enemy: Enemy { health: 1, facing },
-            sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(start_x, 6., 0.)),
-                sprite: Sprite {
-                    color: Color::BLACK,
-                    custom_size: Some(CLIMBER_SHAPE),
-                    ..default()
-                },
-                ..Default::default()
-            },
-            ..Default::default()
-        });
+        crate::climber::spawn_climber(commands, facing, start_x);
     }
 }
 
@@ -210,11 +202,7 @@ fn hop(mut query: Query<(&Enemy, &mut Velocity, &Collisions, &Hop)>) {
         } else if collisions.is_empty() {
             // Nudge Hopper if it's stalled out
             if vel.linear.x.abs() < 0.1 && vel.linear.y.abs() < 0.1 {
-                let mul = if enemy.facing == Facing::Left {
-                    1.
-                } else {
-                    -1.
-                };
+                let mul: f32 = enemy.facing.into();
                 vel.linear = Vec3::X * 2. * mul;
             }
         }

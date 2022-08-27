@@ -51,6 +51,7 @@ impl Plugin for GamePlugin {
 #[derive(PhysicsLayer)]
 enum PhysicsLayers {
     Ground,
+    CliffEdge,
     Enemy,
     Hopper,
     Climber,

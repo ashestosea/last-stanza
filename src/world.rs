@@ -1,7 +1,6 @@
 use crate::{GameState, PhysicsLayers};
 use bevy::prelude::*;
 use heron::prelude::*;
-use rand::Rng;
 
 pub struct WorldPlugin;
 
@@ -20,6 +19,7 @@ struct WorldBundle {
     rigidbody: RigidBody,
     collision_shape: CollisionShape,
     collision_layers: CollisionLayers,
+    material: PhysicMaterial,
 }
 
 impl Default for WorldBundle {
@@ -30,6 +30,11 @@ impl Default for WorldBundle {
             collision_shape: Default::default(),
             collision_layers: CollisionLayers::all_masks::<PhysicsLayers>()
                 .with_group(PhysicsLayers::Ground),
+            material: PhysicMaterial {
+                restitution: 0.,
+                density: 0.,
+                friction: 0.,
+            },
         }
     }
 }
@@ -42,7 +47,7 @@ fn spawn_world(mut commands: Commands) {
 
     // Ground
     let mut pos = Vec3::new(0., -4., 0.);
-    let ground_shape = Vec2::new(1000., 6.);
+    let ground_shape = Vec2::new(50., 6.);
     commands.spawn().insert_bundle(WorldBundle {
         sprite_bundle: SpriteBundle {
             sprite: Sprite {
@@ -85,5 +90,26 @@ fn spawn_world(mut commands: Commands) {
             },
             ..Default::default()
         });
+
+        // Cliff sensor
+        let cliff_shape = Vec3::new(step_shape.x + 1.5, 0.01, 0.);
+        commands
+            .spawn()
+            .insert_bundle(TransformBundle {
+                local: Transform::from_translation(Vec3::new(
+                    pos.x,
+                    pos.y - (step_shape.y / 4.),
+                    pos.z,
+                )),
+                ..Default::default()
+            })
+            .insert(RigidBody::Sensor)
+            .insert(CollisionShape::Cuboid {
+                half_extends: cliff_shape / 2.,
+                border_radius: None,
+            })
+            .insert(
+                CollisionLayers::all_masks::<PhysicsLayers>().with_group(PhysicsLayers::CliffEdge),
+            );
     }
 }
