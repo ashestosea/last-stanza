@@ -1,4 +1,4 @@
-use crate::{DynamicActorBundle, GameState, MainCamera, PhysicsLayers};
+use crate::{loading::TextureAssets, DynamicActorBundle, GameState, MainCamera, PhysicsLayers};
 use bevy::{prelude::*, render::camera::RenderTarget};
 use heron::prelude::*;
 
@@ -60,12 +60,13 @@ fn spawn_player(mut commands: Commands) {
         .insert(Player);
 }
 
-fn spawn_projectile(mut commands: Commands) {
+fn spawn_projectile(mut commands: Commands, texture_assets: Res<TextureAssets>) {
     commands
         .spawn_bundle(SpriteBundle {
+            texture: texture_assets.circle.clone(),
             sprite: Sprite {
+                custom_size: Some(Vec2::ONE),
                 color: Color::GREEN,
-                custom_size: Some(Vec2::new(1., 1.)),
                 ..Default::default()
             },
             transform: Transform::from_translation(Vec3::new(-10., 45., 0.)),
@@ -73,7 +74,7 @@ fn spawn_projectile(mut commands: Commands) {
         })
         .insert(PlayerProjectile { size: 1 })
         .insert_bundle(DynamicActorBundle {
-            shape: CollisionShape::Sphere { radius: 1. },
+            shape: CollisionShape::Sphere { radius: 0.5 },
             material: PhysicMaterial {
                 friction: 0.,
                 restitution: 1.5,

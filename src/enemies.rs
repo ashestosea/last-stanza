@@ -1,6 +1,7 @@
 use crate::climber::{Climber, ClimberPlugin};
-use crate::hopper::Hopper;
 use crate::giant::Giant;
+use crate::hopper::Hopper;
+use crate::loading::TextureAssets;
 use crate::player::PlayerProjectile;
 use crate::{GameState, PhysicsLayers};
 use bevy::prelude::*;
@@ -34,6 +35,34 @@ impl Default for Enemy {
         Self {
             health: Default::default(),
             facing: Facing::Left,
+        }
+    }
+}
+
+#[derive(Component, Default)]
+struct Explosion {
+    power: i32,
+    timer: Timer,
+}
+
+#[derive(Bundle)]
+struct ExplosionBundle {
+    #[bundle]
+    sprite_bundle: SpriteBundle,
+    rigidbody: RigidBody,
+    collision_shape: CollisionShape,
+    collision_layers: CollisionLayers,
+    explosion: Explosion,
+}
+
+impl Default for ExplosionBundle {
+    fn default() -> Self {
+        Self {
+            sprite_bundle: Default::default(),
+            rigidbody: RigidBody::Sensor,
+            collision_shape: Default::default(),
+            collision_layers: CollisionLayers::new(PhysicsLayers::PProj, PhysicsLayers::Enemy),
+            explosion: Default::default(),
         }
     }
 }
@@ -95,15 +124,16 @@ impl Plugin for EnemiesPlugin {
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop_grounding))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_cleanup))
             .add_plugin(ClimberPlugin);
     }
 }
 
 fn setup_enemy_spawns(mut commands: Commands) {
     let spawn_chances = EnemySpawnChances {
-        hopper: 0.1,
-        climber: 0.05,
-        giant: 0.02,
+        hopper: 0.15,
+        climber: 0.1,
+        giant: 0.05,
         ..Default::default()
     };
 
@@ -143,7 +173,7 @@ fn enemy_spawner(
 
     // Hopper
     total_chance += spawn_chances.hopper;
-    if rng < total_chance { 
+    if rng < total_chance {
         Hopper::spawn(commands, facing, start_x);
         return;
     }
@@ -194,24 +224,78 @@ fn hop_grounding(mut query: Query<(&mut Hop, &Collisions)>) {
     }
 }
 
-fn enemy_hits(proj_query: Query<&PlayerProjectile>, mut query: Query<(&mut Enemy, &Collisions)>) {
-    if proj_query.is_empty() {
-        return;
-    }
-    let projectile = proj_query.single();
-
+fn enemy_hits(
+    proj_query: Query<(Entity, &PlayerProjectile)>,
+    explosion_query: Query<(Entity, &Explosion)>,
+    mut query: Query<(&mut Enemy, &Collisions)>,
+) {
     for (mut enemy, collisions) in query.iter_mut() {
         for c in collisions.collision_data() {
             if c.collision_layers().contains_group(PhysicsLayers::PProj) {
-                enemy.health -= projectile.size;
+                for (entity, projectile) in proj_query.iter() {
+                    if c.collision_shape_entity() == entity {
+                        enemy.health -= projectile.size;
+                        break;
+                    }
+                }
+
+                for (entity, explosion) in explosion_query.iter() {
+                    if c.collision_shape_entity() == entity {
+                        enemy.health -= explosion.power;
+                        break;
+                    }
+                }
             }
         }
     }
 }
 
-fn enemy_health(mut commands: Commands, query: Query<(Entity, &Enemy), Changed<Enemy>>) {
-    for (entity, enemy) in query.iter() {
+fn enemy_health(
+    mut commands: Commands,
+    query: Query<(Entity, &Enemy, &Transform), Changed<Enemy>>,
+    texture_assets: Res<TextureAssets>,
+) {
+    for (entity, enemy, trans) in query.iter() {
         if enemy.health <= 0 {
+            let _ = &commands.entity(entity).despawn();
+
+            // Spawn Explosion
+            commands.spawn().insert_bundle(ExplosionBundle {
+                sprite_bundle: SpriteBundle {
+                    texture: texture_assets.circle.clone(),
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::new(
+                            enemy.health.abs() as f32 * 1.5,
+                            enemy.health.abs() as f32 * 1.5,
+                        )),
+                        color: Color::YELLOW,
+                        ..Default::default()
+                    },
+                    transform: Transform::from_translation(trans.translation),
+                    ..Default::default()
+                },
+                collision_shape: CollisionShape::Sphere {
+                    radius: enemy.health.abs() as f32 * 0.75,
+                },
+                explosion: Explosion {
+                    power: enemy.health.abs(),
+                    timer: Timer::from_seconds(0.25, false),
+                },
+                ..Default::default()
+            });
+        }
+    }
+}
+
+fn explosion_cleanup(
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut Explosion)>,
+    mut commands: Commands,
+) {
+    for (entity, mut explosion) in query.iter_mut() {
+        explosion.timer.tick(time.delta());
+
+        if explosion.timer.finished() {
             commands.entity(entity).despawn();
         }
     }
