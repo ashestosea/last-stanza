@@ -1,5 +1,6 @@
 mod climber;
 mod enemies;
+mod giant;
 mod hopper;
 mod loading;
 mod menu;
@@ -36,8 +37,7 @@ impl Plugin for GamePlugin {
             .add_plugin(PlayerPlugin)
             .add_plugin(EnemiesPlugin)
             .add_plugin(PhysicsPlugin::default())
-            .insert_resource(Gravity::from(Vec2::new(0., -9.81)))
-            ;
+            .insert_resource(Gravity::from(Vec2::new(0., -9.81)));
 
         // #[cfg(debug_assertions)]
         // {
@@ -55,6 +55,7 @@ enum PhysicsLayers {
     Enemy,
     Hopper,
     Climber,
+    Giant,
     PProj,
     Debug,
 }

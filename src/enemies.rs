@@ -1,5 +1,6 @@
 use crate::climber::{Climber, ClimberPlugin};
 use crate::hopper::Hopper;
+use crate::giant::Giant;
 use crate::player::PlayerProjectile;
 use crate::{GameState, PhysicsLayers};
 use bevy::prelude::*;
@@ -42,9 +43,6 @@ struct Sneaker;
 
 #[derive(Component)]
 struct Diver;
-
-#[derive(Component)]
-struct Giant;
 
 #[derive(Component)]
 struct Behemoth;
@@ -104,7 +102,8 @@ impl Plugin for EnemiesPlugin {
 fn setup_enemy_spawns(mut commands: Commands) {
     let spawn_chances = EnemySpawnChances {
         hopper: 0.1,
-        climber: 0.1,
+        climber: 0.05,
+        giant: 0.02,
         ..Default::default()
     };
 
@@ -153,6 +152,13 @@ fn enemy_spawner(
     total_chance += spawn_chances.climber;
     if rng < total_chance {
         Climber::spawn(commands, facing, start_x);
+        return;
+    }
+
+    // Giant
+    total_chance += spawn_chances.giant;
+    if rng < total_chance {
+        Giant::spawn(commands, facing, start_x);
         return;
     }
 }
