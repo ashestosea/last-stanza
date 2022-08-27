@@ -265,8 +265,8 @@ fn enemy_health(
                     texture: texture_assets.circle.clone(),
                     sprite: Sprite {
                         custom_size: Some(Vec2::new(
-                            enemy.health.abs() as f32 * 1.5,
-                            enemy.health.abs() as f32 * 1.5,
+                            enemy.health.abs() as f32 * 2.,
+                            enemy.health.abs() as f32 * 2.,
                         )),
                         color: Color::YELLOW,
                         ..Default::default()
@@ -275,7 +275,7 @@ fn enemy_health(
                     ..Default::default()
                 },
                 collision_shape: CollisionShape::Sphere {
-                    radius: enemy.health.abs() as f32 * 0.75,
+                    radius: enemy.health.abs() as f32,
                 },
                 explosion: Explosion {
                     power: enemy.health.abs(),
