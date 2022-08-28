@@ -1,6 +1,6 @@
-use crate::{GameState, MainCamera};
 use crate::loading::FontAssets;
-use bevy::{math::vec3, prelude::*, render::camera::ScalingMode};
+use crate::GameState;
+use bevy::prelude::*;
 
 pub struct MenuPlugin;
 
@@ -33,43 +33,33 @@ fn setup_menu(
     font_assets: Res<FontAssets>,
 ) {
     commands
-        .spawn_bundle(Camera2dBundle {
-            transform: Transform::from_translation(vec3(0., 7., 0.)),
-            projection: OrthographicProjection {
-                scaling_mode: ScalingMode::FixedHorizontal(30.),
+        .spawn_bundle(ButtonBundle {
+            style: Style {
+                size: Size::new(Val::Px(120.0), Val::Px(50.0)),
+                margin: UiRect::all(Val::Auto),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
                 ..Default::default()
             },
+            color: button_colors.normal,
             ..Default::default()
         })
-        .insert(MainCamera);
-
-    commands.spawn_bundle(ButtonBundle {
-        style: Style {
-            size: Size::new(Val::Px(120.0), Val::Px(50.0)),
-            margin: UiRect::all(Val::Auto),
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            ..Default::default()
-        },
-        color: button_colors.normal,
-        ..Default::default()
-    })
-    .with_children(|parent| {
-        parent.spawn_bundle(TextBundle {
-            text: Text {
-                sections: vec![TextSection {
-                    value: "Play".to_string(),
-                    style: TextStyle {
-                        font: font_assets.fantasque_sans.clone(),
-                        font_size: 40.0,
-                        color: Color::rgb(0.9, 0.9, 0.9),
-                    }
-                }],
-                alignment: Default::default(),
-            },
-            ..Default::default()
+        .with_children(|parent| {
+            parent.spawn_bundle(TextBundle {
+                text: Text {
+                    sections: vec![TextSection {
+                        value: "Play".to_string(),
+                        style: TextStyle {
+                            font: font_assets.fantasque_sans.clone(),
+                            font_size: 40.0,
+                            color: Color::rgb(0.9, 0.9, 0.9),
+                        },
+                    }],
+                    alignment: Default::default(),
+                },
+                ..Default::default()
+            });
         });
-    });
 }
 
 fn click_play_button(

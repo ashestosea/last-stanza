@@ -1,3 +1,4 @@
+mod main_camera;
 mod climber;
 mod enemies;
 mod giant;
@@ -7,6 +8,7 @@ mod menu;
 mod player;
 mod world;
 
+use crate::main_camera::MainCameraPlugin;
 use crate::enemies::EnemiesPlugin;
 use crate::loading::LoadingPlugin;
 use crate::menu::MenuPlugin;
@@ -30,6 +32,7 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_state(GameState::Loading)
             .add_plugin(LoadingPlugin)
+            .add_plugin(MainCameraPlugin)
             .add_plugin(MenuPlugin)
             //     .add_plugin(ActionsPlugin)
             //     .add_plugin(InternalAudioPlugin)
@@ -82,6 +85,3 @@ impl Default for DynamicActorBundle {
         }
     }
 }
-
-#[derive(Component)]
-struct MainCamera;

@@ -1,4 +1,5 @@
-use crate::{loading::TextureAssets, DynamicActorBundle, GameState, MainCamera, PhysicsLayers};
+use crate::main_camera::MainCamera;
+use crate::{loading::TextureAssets, DynamicActorBundle, GameState, PhysicsLayers};
 use bevy::{prelude::*, render::camera::RenderTarget};
 use heron::prelude::*;
 
