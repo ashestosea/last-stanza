@@ -40,8 +40,8 @@ impl Default for Enemy {
 }
 
 #[derive(Component, Default)]
-struct Explosion {
-    power: i32,
+pub(crate) struct Explosion {
+    pub power: i32,
     timer: Timer,
 }
 
