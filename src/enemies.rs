@@ -124,7 +124,7 @@ impl Plugin for EnemiesPlugin {
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop_grounding))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_cleanup))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_cleanup).after(enemy_hits))
             .add_plugin(ClimberPlugin);
     }
 }
@@ -289,11 +289,12 @@ fn enemy_health(
 
 fn explosion_cleanup(
     time: Res<Time>,
-    mut query: Query<(Entity, &mut Explosion)>,
+    mut query: Query<(Entity, &mut Explosion, &mut CollisionShape)>,
     mut commands: Commands,
 ) {
-    for (entity, mut explosion) in query.iter_mut() {
+    for (entity, mut explosion, mut shape) in query.iter_mut() {
         explosion.timer.tick(time.delta());
+        commands.entity(entity).insert(CollisionShape::Sphere { radius: 0. });
 
         if explosion.timer.finished() {
             commands.entity(entity).despawn();
