@@ -25,8 +25,8 @@ impl Giant {
     pub fn spawn(mut commands: Commands, facing: Facing, start_x: f32) {
         let mul: f32 = facing.into();
         let power = Vec2::new(
-            rand::thread_rng().gen_range(1.0..2.0) * mul,
-            rand::thread_rng().gen_range(15.0..15.01),
+            rand::thread_rng().gen_range(0.5..0.51) * mul,
+            rand::thread_rng().gen_range(10.5..11.0),
         );
 
         commands.spawn().insert_bundle(GiantBundle {
@@ -53,13 +53,13 @@ impl Giant {
                     .with_groups(&[PhysicsLayers::Enemy, PhysicsLayers::Giant])
                     .with_masks(&[
                         PhysicsLayers::Ground,
-                        PhysicsLayers::Giant,
+                        // PhysicsLayers::Giant,
                         PhysicsLayers::PProj,
                     ]),
                 ..Default::default()
             },
             rotation_constraints: RotationConstraints::lock(),
-            enemy: Enemy { health: 15, facing },
+            enemy: Enemy { health: 50, facing },
             hop: Hop {
                 grounded: false,
                 power,
