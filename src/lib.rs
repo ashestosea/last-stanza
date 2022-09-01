@@ -1,16 +1,13 @@
-mod main_camera;
-mod climber;
 mod enemies;
-mod giant;
-mod hopper;
 mod loading;
+mod main_camera;
 mod menu;
 mod player;
 mod world;
 
-use crate::main_camera::MainCameraPlugin;
 use crate::enemies::EnemiesPlugin;
 use crate::loading::LoadingPlugin;
+use crate::main_camera::MainCameraPlugin;
 use crate::menu::MenuPlugin;
 use crate::player::PlayerPlugin;
 use crate::world::WorldPlugin;

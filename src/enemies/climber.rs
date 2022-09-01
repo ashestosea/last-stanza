@@ -4,8 +4,12 @@ use crate::{
 };
 use bevy::prelude::*;
 use heron::prelude::*;
+use rand::Rng;
 
 const CLIMBER_SHAPE: Vec2 = Vec2::new(1., 2.);
+
+#[derive(Component, Default)]
+pub(crate) struct ClimberSpawn;
 
 #[derive(Component)]
 pub(crate) struct Climber;
@@ -25,17 +29,26 @@ pub struct ClimberPlugin;
 
 impl Plugin for ClimberPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_update(GameState::Playing).with_system(climb));
+        app
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(climb))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(spawn));
     }
 }
 
-impl Climber {
-    pub(crate) fn spawn(mut commands: Commands, facing: Facing, start_x: f32) {
+fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
+    for (entity, _spawn) in query.iter() {
+        commands.entity(entity).despawn();
+
+        let facing = if rand::thread_rng().gen_bool(0.5) {
+            Facing::Left
+        } else {
+            Facing::Right
+        };
         let facing_mul: f32 = facing.into();
 
         commands.spawn().insert_bundle(ClimberBundle {
             sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(start_x, 0., 0.)),
+                transform: Transform::from_translation(Vec3::new(24. * -facing_mul, 0., 0.)),
                 sprite: Sprite {
                     color: Color::MIDNIGHT_BLUE,
                     custom_size: Some(CLIMBER_SHAPE),

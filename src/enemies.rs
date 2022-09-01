@@ -1,6 +1,8 @@
-use crate::climber::{Climber, ClimberPlugin};
-use crate::giant::Giant;
-use crate::hopper::Hopper;
+mod climber;
+mod giant;
+mod hopper;
+
+pub use crate::enemies::giant::Giant;
 use crate::loading::TextureAssets;
 use crate::player::PlayerProjectile;
 use crate::{GameState, PhysicsLayers};
@@ -8,8 +10,12 @@ use bevy::prelude::*;
 use heron::prelude::*;
 use rand::Rng;
 
+use self::climber::{ClimberPlugin, ClimberSpawn};
+use self::giant::{GiantPlugin, GiantSpawn};
+use self::hopper::{HopperPlugin, HopperSpawn};
+
 #[derive(PartialEq, Eq, Clone, Copy)]
-pub(crate) enum Facing {
+pub enum Facing {
     Left,
     Right,
 }
@@ -124,8 +130,14 @@ impl Plugin for EnemiesPlugin {
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop_grounding))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_cleanup).after(enemy_hits))
-            .add_plugin(ClimberPlugin);
+            .add_system_set(
+                SystemSet::on_update(GameState::Playing)
+                    .with_system(explosion_cleanup)
+                    .after(enemy_hits),
+            )
+            .add_plugin(HopperPlugin)
+            .add_plugin(ClimberPlugin)
+            .add_plugin(GiantPlugin);
     }
 }
 
@@ -146,7 +158,7 @@ fn setup_enemy_spawns(mut commands: Commands) {
 fn enemy_spawner(
     time: Res<Time>,
     spawn_chances: Res<EnemySpawnChances>,
-    commands: Commands,
+    mut commands: Commands,
     mut spawn_timer: ResMut<SpawnTimer>,
 ) {
     spawn_timer.timer.tick(time.delta());
@@ -155,16 +167,8 @@ fn enemy_spawner(
         return;
     }
 
-    let (facing, start_mul) = if rand::thread_rng().gen_bool(0.5) {
-        (Facing::Left, -1.)
-    } else {
-        (Facing::Right, 1.)
-    };
-
     let rng = rand::thread_rng().gen_range(0f32..1f32);
     let mut total_chance = spawn_chances.none();
-
-    let start_x = 24. * start_mul;
 
     // Nothing
     if rng < total_chance {
@@ -174,21 +178,22 @@ fn enemy_spawner(
     // Hopper
     total_chance += spawn_chances.hopper;
     if rng < total_chance {
-        Hopper::spawn(commands, facing, start_x);
+        // Hopper::spawn(commands, facing, start_x);
+        commands.spawn().insert(HopperSpawn);
         return;
     }
 
     // Climber
     total_chance += spawn_chances.climber;
     if rng < total_chance {
-        Climber::spawn(commands, facing, start_x);
+        commands.spawn().insert(ClimberSpawn);
         return;
     }
 
     // Giant
     total_chance += spawn_chances.giant;
     if rng < total_chance {
-        Giant::spawn(commands, facing, start_x);
+        commands.spawn().insert(GiantSpawn);
         return;
     }
 }
@@ -294,7 +299,9 @@ fn explosion_cleanup(
 ) {
     for (entity, mut explosion) in query.iter_mut() {
         explosion.timer.tick(time.delta());
-        commands.entity(entity).insert(CollisionShape::Sphere { radius: 0. });
+        commands
+            .entity(entity)
+            .insert(CollisionShape::Sphere { radius: 0. });
 
         if explosion.timer.finished() {
             commands.entity(entity).despawn();
