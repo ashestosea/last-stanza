@@ -289,10 +289,10 @@ fn enemy_health(
 
 fn explosion_cleanup(
     time: Res<Time>,
-    mut query: Query<(Entity, &mut Explosion, &mut CollisionShape)>,
+    mut query: Query<(Entity, &mut Explosion), With<CollisionShape>>,
     mut commands: Commands,
 ) {
-    for (entity, mut explosion, mut shape) in query.iter_mut() {
+    for (entity, mut explosion) in query.iter_mut() {
         explosion.timer.tick(time.delta());
         commands.entity(entity).insert(CollisionShape::Sphere { radius: 0. });
 
