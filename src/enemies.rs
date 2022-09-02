@@ -30,6 +30,16 @@ impl From<Facing> for f32 {
     }
 }
 
+impl From<Facing> for bool {
+    fn from(val: Facing) -> Self {
+        if val == Facing::Left {
+            false
+        } else {
+            true
+        }
+    }
+}
+
 #[derive(Component)]
 pub(crate) struct Enemy {
     pub health: i32,
