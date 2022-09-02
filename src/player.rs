@@ -3,7 +3,7 @@ use crate::{loading::TextureAssets, DynamicActorBundle, GameState, PhysicsLayers
 use bevy::{prelude::*, render::camera::RenderTarget};
 use heron::prelude::*;
 
-const PLAYER_CENTER: Vec2 = Vec2::new(0., 7.5);
+const PLAYER_CENTER: Vec2 = Vec2::new(0., 8.);
 
 pub struct PlayerPlugin;
 
@@ -52,6 +52,7 @@ fn spawn_player(mut commands: Commands) {
             // texture: textures.texture_bevy.clone(),
             sprite: Sprite {
                 color: Color::RED,
+                anchor: bevy::sprite::Anchor::BottomCenter,
                 custom_size: Some(Vec2::new(0.75, 1.5)),
                 ..Default::default()
             },

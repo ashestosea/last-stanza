@@ -6,7 +6,7 @@ use bevy::{prelude::*, render::camera::ScalingMode};
 use heron::utils::NearZero;
 use rand::Rng;
 
-const CAM_POS: Vec3 = Vec3::new(0., 7., 0.);
+const CAM_POS: Vec3 = Vec3::new(0., 8., 0.);
 
 #[derive(Component)]
 pub struct MainCamera;

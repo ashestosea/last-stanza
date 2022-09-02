@@ -31,6 +31,10 @@ pub struct FontAssets {
 
 #[derive(AssetCollection)]
 pub struct TextureAssets {
+    #[asset(path = "textures/ground.png")]
+    pub ground: Handle<Image>,
+    #[asset(path = "textures/ziggurat.png")]
+    pub ziggurat: Handle<Image>,
     #[asset(path = "textures/circle.png")]
     pub circle: Handle<Image>,
 }

@@ -1,4 +1,4 @@
-use crate::{GameState, PhysicsLayers};
+use crate::{loading::TextureAssets, GameState, PhysicsLayers};
 use bevy::prelude::*;
 use heron::prelude::*;
 
@@ -15,7 +15,7 @@ impl Plugin for WorldPlugin {
 #[derive(Bundle)]
 struct WorldBundle {
     #[bundle]
-    sprite_bundle: SpriteBundle,
+    transform_bundle: TransformBundle,
     rigidbody: RigidBody,
     collision_shape: CollisionShape,
     collision_layers: CollisionLayers,
@@ -25,7 +25,7 @@ struct WorldBundle {
 impl Default for WorldBundle {
     fn default() -> Self {
         Self {
-            sprite_bundle: Default::default(),
+            transform_bundle: TransformBundle::default(),
             rigidbody: RigidBody::Static,
             collision_shape: Default::default(),
             collision_layers: CollisionLayers::all_masks::<PhysicsLayers>()
@@ -39,23 +39,31 @@ impl Default for WorldBundle {
     }
 }
 
-fn spawn_world(mut commands: Commands) {
+fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
     let step_height = 2.;
     let step_decrement = 6.4;
     let step_count = 3;
-    let ground_color = Color::hsla(1., 1., 1., 1.);
 
     // Ground
-    let mut pos = Vec3::new(0., -4., 0.);
+    let mut pos = Vec3::new(0., -3., 0.);
     let ground_shape = Vec2::new(50., 6.);
+
+    // Ground texture
+    commands.spawn().insert_bundle(SpriteBundle {
+        texture: texture_assets.ground.clone(),
+        sprite: Sprite {
+            anchor: bevy::sprite::Anchor::TopCenter,
+            custom_size: Some(Vec2::new(30., 0.703125)),
+            ..Default::default()
+        },
+        transform: Transform::from_translation(Vec3::ZERO),
+        ..Default::default()
+    });
+
+    // Ground collider
     commands.spawn().insert_bundle(WorldBundle {
-        sprite_bundle: SpriteBundle {
-            sprite: Sprite {
-                color: ground_color,
-                custom_size: Some(ground_shape),
-                ..Default::default()
-            },
-            transform: Transform::from_translation(pos),
+        transform_bundle: TransformBundle {
+            local: Transform::from_translation(pos),
             ..Default::default()
         },
         collision_shape: CollisionShape::Cuboid {
@@ -66,22 +74,34 @@ fn spawn_world(mut commands: Commands) {
     });
 
     let mut step_shape = Vec2::new(0., step_height);
+
+    // Ziggurat texture
+    commands.spawn().insert_bundle(SpriteBundle {
+        texture: texture_assets.ziggurat.clone(),
+        sprite: Sprite {
+            anchor: bevy::sprite::Anchor::BottomCenter,
+            custom_size: Some(Vec2::new(
+                step_height * 11.,
+                step_height * (step_count + 1) as f32,
+            )),
+            ..Default::default()
+        },
+        transform: Transform::from_translation(Vec3::new(0., -0.05, 0.)),
+        ..Default::default()
+    });
+
+    // Step colliders
     for i in 0..=step_count {
         if i < step_count {
             step_shape.x = (step_height * 11.) - (i as f32 * step_decrement);
         } else {
             step_shape.x = 1.;
         }
-        pos.y = step_height * i as f32;
+        pos.y = 1. + step_height * i as f32;
 
         commands.spawn().insert_bundle(WorldBundle {
-            sprite_bundle: SpriteBundle {
-                sprite: Sprite {
-                    color: ground_color,
-                    custom_size: Some(step_shape),
-                    ..Default::default()
-                },
-                transform: Transform::from_translation(pos),
+            transform_bundle: TransformBundle {
+                local: Transform::from_translation(pos),
                 ..Default::default()
             },
             collision_shape: CollisionShape::Cuboid {
