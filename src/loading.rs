@@ -40,4 +40,7 @@ pub struct TextureAssets {
     #[asset(texture_atlas(tile_size_x = 72., tile_size_y = 72., columns = 4, rows = 1))]
     #[asset(path = "textures/hopper.png")]
     pub hopper: Handle<TextureAtlas>,
+    #[asset(texture_atlas(tile_size_x = 72., tile_size_y = 72., columns = 8, rows = 1))]
+    #[asset(path = "textures/explosion.png")]
+    pub explosion: Handle<TextureAtlas>,
 }

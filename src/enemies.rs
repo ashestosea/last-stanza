@@ -6,6 +6,7 @@ pub use crate::enemies::giant::Giant;
 use crate::loading::TextureAssets;
 use crate::player::PlayerProjectile;
 use crate::{GameState, PhysicsLayers};
+use benimator::FrameRate;
 use bevy::prelude::*;
 use heron::prelude::*;
 use rand::Rng;
@@ -64,10 +65,12 @@ pub(crate) struct Explosion {
 #[derive(Bundle)]
 struct ExplosionBundle {
     #[bundle]
-    sprite_bundle: SpriteBundle,
+    sprite_bundle: SpriteSheetBundle,
     rigidbody: RigidBody,
     collision_shape: CollisionShape,
     collision_layers: CollisionLayers,
+    animation: ExplosionAnimation,
+    animation_state: ExplosionAnimationState,
     explosion: Explosion,
 }
 
@@ -78,10 +81,23 @@ impl Default for ExplosionBundle {
             rigidbody: RigidBody::Sensor,
             collision_shape: Default::default(),
             collision_layers: CollisionLayers::new(PhysicsLayers::PProj, PhysicsLayers::Enemy),
+            animation: ExplosionAnimation(benimator::Animation::from_indices(
+                0..=8,
+                FrameRate::from_fps(16.),
+            )),
+            animation_state: Default::default(),
             explosion: Default::default(),
         }
     }
 }
+// Create the animation component
+// Note: you may make the animation an asset instead of a component
+#[derive(Component, Deref)]
+struct ExplosionAnimation(benimator::Animation);
+
+// Create the player component
+#[derive(Default, Component, Deref, DerefMut)]
+struct ExplosionAnimationState(benimator::State);
 
 #[derive(Component)]
 struct Sneaker;
@@ -140,11 +156,8 @@ impl Plugin for EnemiesPlugin {
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop_grounding))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health))
-            .add_system_set(
-                SystemSet::on_update(GameState::Playing)
-                    .with_system(explosion_cleanup)
-                    .after(enemy_hits),
-            )
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_cleanup))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_animate))
             .add_plugin(HopperPlugin)
             .add_plugin(ClimberPlugin)
             .add_plugin(GiantPlugin);
@@ -153,7 +166,7 @@ impl Plugin for EnemiesPlugin {
 
 fn setup_enemy_spawns(mut commands: Commands) {
     let spawn_chances = EnemySpawnChances {
-        hopper: 0.15,
+        hopper: 0.6,
         climber: 0.1,
         giant: 0.05,
         ..Default::default()
@@ -276,14 +289,13 @@ fn enemy_health(
 
             // Spawn Explosion
             commands.spawn().insert_bundle(ExplosionBundle {
-                sprite_bundle: SpriteBundle {
-                    texture: texture_assets.circle.clone(),
-                    sprite: Sprite {
+                sprite_bundle: SpriteSheetBundle {
+                    texture_atlas: texture_assets.explosion.clone(),
+                    sprite: TextureAtlasSprite {
                         custom_size: Some(Vec2::new(
                             enemy.health.abs() as f32 * 2.,
                             enemy.health.abs() as f32 * 2.,
                         )),
-                        color: Color::YELLOW,
                         ..Default::default()
                     },
                     transform: Transform::from_translation(trans.translation),
@@ -294,11 +306,34 @@ fn enemy_health(
                 },
                 explosion: Explosion {
                     power: enemy.health.abs(),
-                    timer: Timer::from_seconds(0.25, false),
+                    timer: Timer::from_seconds(0.5, false),
                 },
                 ..Default::default()
             });
         }
+    }
+}
+
+fn explosion_animate(
+    time: Res<Time>,
+    mut query: Query<(
+        &mut ExplosionAnimationState,
+        &mut TextureAtlasSprite,
+        &ExplosionAnimation,
+    )>,
+) {
+    for (mut player, mut texture, animation) in query.iter_mut() {
+        // Update the state
+        player.update(animation, time.delta());
+
+        // Update the texture atlas
+        texture.index = player.frame_index();
+
+        println!(
+            "{} :: explosion frame {}",
+            time.seconds_since_startup(),
+            player.frame_index()
+        );
     }
 }
 
