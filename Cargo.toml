@@ -12,38 +12,16 @@ bevy = { version = "0.8.0", default-features = false, features = [
     "png",
     "render",
     "x11",
-    "dynamic",
 ] }
-bevy-inspector-egui = "0.12.1"
+# bevy-inspector-egui = "0.12.1"
 # bevy_editor_pls = {git = "https://github.com/jakobhellermann/bevy_editor_pls"}
-# heron = { version = "3.1.0", features = ["2d"] }
-heron = { git = "https://github.com/jcornaz/heron", default-features = false, features = [
-    "2d",
-] }
-# bevy_rapier2d = {version = "0.16.0", features = ["debug-render"]}
+heron = { version = "4.0.1", default-features = false, features = ["2d"] }
 rand = "0.8.5"
 toml = "0.5.9"
+# directories = "*"
 bevy_asset_loader ={ version = "0.12.0", features = ["2d"]}
-# bevy-parallax = "*"
-# bevy_proto = "*"
 benimator = "*"
-# bevy_sprite_animation = {git = "https://github.com/PhaestusFox/bevy_sprite_animation"}
 # hot-lib-reloader = "*"
 
 [profile.dev.package."*"]
 opt-level = 3
-
-
-# NOTE: For maximum performance, build using a nightly compiler
-# If you are using rust stable, remove the "-Zshare-generics=y" below.
-
-[target.x86_64-unknown-linux-gnu]
-linker = "clang"
-# rustflags = ["-Clink-arg=-fuse-ld=lld", "-Zshare-generics=y"]
-rustflags = ["-Clink-arg=-fuse-ld=lld"]
-
-
-# Optional: Uncommenting the following improves compile times, but reduces the amount of debug info to 'line number tables only'
-# In most cases the gains are negligible, but if you are on macos and have slow compile times you should see significant gains.
-#[profile.dev]
-#debug = 1
