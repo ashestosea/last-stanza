@@ -13,13 +13,15 @@ bevy = { version = "0.8.0", default-features = false, features = [
     "render",
     "x11",
 ] }
+serde = "*"
 # bevy-inspector-egui = "0.12.1"
 # bevy_editor_pls = {git = "https://github.com/jakobhellermann/bevy_editor_pls"}
 heron = { version = "4.0.1", default-features = false, features = ["2d"] }
 rand = "0.8.5"
 toml = "0.5.9"
 # directories = "*"
-bevy_asset_loader ={ version = "0.12.0", features = ["2d"]}
+bevy_asset_loader = { version = "0.12.0", features = ["2d"] }
+bevy_common_assets = { version = "0.3.0", features = ["toml"] }
 benimator = "*"
 # hot-lib-reloader = "*"
 
