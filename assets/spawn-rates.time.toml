@@ -1,0 +1,15 @@
+[t.0]
+hopper = 0.4
+climber = 0.0
+sneaker = 0.0
+diver = 0.0
+giant = 0.0
+behemoth = 0.0
+
+[t.3]
+hopper = 0.3
+climber = 0.1
+giant = 0.05
+
+[t.6]
+giant = 0.1

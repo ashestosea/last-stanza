@@ -1,4 +1,5 @@
 mod enemies;
+pub mod events;
 mod loading;
 mod main_camera;
 mod menu;
@@ -7,6 +8,7 @@ mod world;
 
 use crate::enemies::EnemiesPlugin;
 use crate::loading::LoadingPlugin;
+use crate::events::EventsPlugin;
 use crate::main_camera::MainCameraPlugin;
 use crate::menu::MenuPlugin;
 use crate::player::PlayerPlugin;
@@ -29,6 +31,7 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_state(GameState::Loading)
             .add_plugin(LoadingPlugin)
+            .add_plugin(EventsPlugin)
             .add_plugin(MainCameraPlugin)
             .add_plugin(MenuPlugin)
             //     .add_plugin(ActionsPlugin)

@@ -3,6 +3,7 @@ mod giant;
 mod hopper;
 
 pub use crate::enemies::giant::Giant;
+use crate::events::EnemySpawnsChanged;
 use crate::loading::TextureAssets;
 use crate::player::PlayerProjectile;
 use crate::{GameState, PhysicsLayers};
@@ -33,11 +34,7 @@ impl From<Facing> for f32 {
 
 impl From<Facing> for bool {
     fn from(val: Facing) -> Self {
-        if val == Facing::Left {
-            false
-        } else {
-            true
-        }
+        val != Facing::Left
     }
 }
 
@@ -118,69 +115,80 @@ struct SpawnTimer {
     timer: Timer,
 }
 
-struct EnemySpawnChances {
-    hopper: f32,
-    climber: f32,
-    sneaker: f32,
-    diver: f32,
-    giant: f32,
-    behemoth: f32,
+#[derive(serde::Deserialize, Clone, Default)]
+pub struct SpawnRates {
+    pub hopper: Option<f32>,
+    pub climber: Option<f32>,
+    pub sneaker: Option<f32>,
+    pub diver: Option<f32>,
+    pub giant: Option<f32>,
+    pub behemoth: Option<f32>,
+}
+
+impl SpawnRates {
+    fn none(&self) -> f32 {
+        1. - self.hopper.unwrap_or_default()
+            - self.climber.unwrap_or_default()
+            - self.sneaker.unwrap_or_default()
+            - self.diver.unwrap_or_default()
+            - self.giant.unwrap_or_default()
+            - self.behemoth.unwrap_or_default()
+    }
 }
 
 pub struct EnemiesPlugin;
 
-impl Default for EnemySpawnChances {
-    fn default() -> Self {
-        Self {
-            hopper: 0.0,
-            climber: 0.0,
-            sneaker: 0.0,
-            diver: 0.0,
-            giant: 0.0,
-            behemoth: 0.0,
+impl Plugin for EnemiesPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system_set(
+            SystemSet::on_update(GameState::Playing).with_system(update_enemy_spawns),
+        )
+        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_spawner))
+        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop))
+        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop_grounding))
+        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
+        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health))
+        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_cleanup))
+        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_animate))
+        .init_resource::<SpawnRates>()
+        .insert_resource(SpawnTimer {
+            timer: Timer::from_seconds(1., true),
+        })
+        .add_plugin(HopperPlugin)
+        .add_plugin(ClimberPlugin)
+        .add_plugin(GiantPlugin);
+    }
+}
+
+fn update_enemy_spawns(
+    mut spawn_change_ev: EventReader<EnemySpawnsChanged>,
+    mut spawn_rates: ResMut<SpawnRates>,
+) {
+    for e in spawn_change_ev.iter() {
+        if let Some(val) = e.hopper {
+            spawn_rates.hopper = Some(val);
+        }
+        if let Some(val) = e.climber {
+            spawn_rates.climber = Some(val);
+        }
+        if let Some(val) = e.sneaker {
+            spawn_rates.sneaker = Some(val);
+        }
+        if let Some(val) = e.diver {
+            spawn_rates.diver = Some(val);
+        }
+        if let Some(val) = e.giant {
+            spawn_rates.giant = Some(val);
+        }
+        if let Some(val) = e.behemoth {
+            spawn_rates.behemoth = Some(val);
         }
     }
 }
 
-impl EnemySpawnChances {
-    fn none(&self) -> f32 {
-        1. - self.hopper - self.climber - self.sneaker - self.diver - self.giant - self.behemoth
-    }
-}
-
-impl Plugin for EnemiesPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(GameState::Playing).with_system(setup_enemy_spawns))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_spawner))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop_grounding))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_cleanup))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_animate))
-            .add_plugin(HopperPlugin)
-            .add_plugin(ClimberPlugin)
-            .add_plugin(GiantPlugin);
-    }
-}
-
-fn setup_enemy_spawns(mut commands: Commands) {
-    let spawn_chances = EnemySpawnChances {
-        hopper: 0.6,
-        climber: 0.1,
-        giant: 0.05,
-        ..Default::default()
-    };
-
-    commands.insert_resource(spawn_chances);
-    commands.insert_resource(SpawnTimer {
-        timer: Timer::from_seconds(1., true),
-    });
-}
-
 fn enemy_spawner(
     time: Res<Time>,
-    spawn_chances: Res<EnemySpawnChances>,
+    spawn_chances: Res<SpawnRates>,
     mut commands: Commands,
     mut spawn_timer: ResMut<SpawnTimer>,
 ) {
@@ -199,7 +207,7 @@ fn enemy_spawner(
     }
 
     // Hopper
-    total_chance += spawn_chances.hopper;
+    total_chance += spawn_chances.hopper.unwrap_or_default();
     if rng < total_chance {
         // Hopper::spawn(commands, facing, start_x);
         commands.spawn().insert(HopperSpawn);
@@ -207,16 +215,17 @@ fn enemy_spawner(
     }
 
     // Climber
-    total_chance += spawn_chances.climber;
+    total_chance += spawn_chances.climber.unwrap_or_default();
     if rng < total_chance {
         commands.spawn().insert(ClimberSpawn);
         return;
     }
 
     // Giant
-    total_chance += spawn_chances.giant;
+    total_chance += spawn_chances.giant.unwrap_or_default();
     if rng < total_chance {
         commands.spawn().insert(GiantSpawn);
+        #[allow(clippy::needless_return)]
         return;
     }
 }
