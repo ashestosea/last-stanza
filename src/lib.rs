@@ -7,8 +7,8 @@ mod player;
 mod world;
 
 use crate::enemies::EnemiesPlugin;
-use crate::loading::LoadingPlugin;
 use crate::events::EventsPlugin;
+use crate::loading::LoadingPlugin;
 use crate::main_camera::MainCameraPlugin;
 use crate::menu::MenuPlugin;
 use crate::player::PlayerPlugin;
@@ -40,6 +40,9 @@ impl Plugin for GamePlugin {
             .add_plugin(PlayerPlugin)
             .add_plugin(EnemiesPlugin)
             .add_plugin(PhysicsPlugin::default())
+            .add_system_set(
+                SystemSet::on_update(GameState::Playing).with_system(cleanup_far_entities),
+            )
             .insert_resource(Gravity::from(Vec2::new(0., -9.81)));
 
         // #[cfg(debug_assertions)]
@@ -50,16 +53,30 @@ impl Plugin for GamePlugin {
     }
 }
 
+fn cleanup_far_entities(mut commands: Commands, query: Query<(Entity, &Transform)>) {
+    for (entity, transform) in query.iter() {
+        if transform.translation.x < -50.
+            || transform.translation.x > 50.
+            || transform.translation.y < -50.
+            || transform.translation.y > 50.
+        {
+            commands.entity(entity).despawn();
+        }
+    }
+}
+
 #[allow(unused)]
 #[derive(PhysicsLayer)]
 enum PhysicsLayers {
     Ground,
     CliffEdge,
+    Player,
     Enemy,
     Hopper,
     Climber,
     Giant,
-    PProj,
+    PlayerProj,
+    EnemyProj,
     Debug,
 }
 
