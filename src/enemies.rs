@@ -77,7 +77,7 @@ impl Default for ExplosionBundle {
             sprite_bundle: Default::default(),
             rigidbody: RigidBody::Sensor,
             collision_shape: Default::default(),
-            collision_layers: CollisionLayers::new(PhysicsLayers::PProj, PhysicsLayers::Enemy),
+            collision_layers: CollisionLayers::new(PhysicsLayers::PlayerProj, PhysicsLayers::Enemy),
             animation: ExplosionAnimation(benimator::Animation::from_indices(
                 0..=8,
                 FrameRate::from_fps(16.),
@@ -268,7 +268,9 @@ fn enemy_hits(
 ) {
     for (mut enemy, collisions) in query.iter_mut() {
         for c in collisions.collision_data() {
-            if c.collision_layers().contains_group(PhysicsLayers::PProj) {
+            if c.collision_layers()
+                .contains_group(PhysicsLayers::PlayerProj)
+            {
                 for (entity, projectile) in proj_query.iter() {
                     if c.collision_shape_entity() == entity {
                         enemy.health -= projectile.size;

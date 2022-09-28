@@ -73,7 +73,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                     .with_masks(&[
                         PhysicsLayers::Ground,
                         // PhysicsLayers::Giant,
-                        PhysicsLayers::PProj,
+                        PhysicsLayers::PlayerProj,
                     ]),
                 ..Default::default()
             },

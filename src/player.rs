@@ -82,7 +82,7 @@ fn spawn_projectile(mut commands: Commands, texture_assets: Res<TextureAssets>) 
                 restitution: 1.5,
                 ..Default::default()
             },
-            layers: CollisionLayers::new(PhysicsLayers::PProj, PhysicsLayers::Ground)
+            layers: CollisionLayers::new(PhysicsLayers::PlayerProj, PhysicsLayers::Ground)
                 .with_mask(PhysicsLayers::Enemy),
             ..Default::default()
         });

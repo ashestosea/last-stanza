@@ -80,7 +80,7 @@ fn spawn(
                     .with_masks(&[
                         PhysicsLayers::Ground,
                         PhysicsLayers::Hopper,
-                        PhysicsLayers::PProj,
+                        PhysicsLayers::PlayerProj,
                     ]),
                 ..Default::default()
             },

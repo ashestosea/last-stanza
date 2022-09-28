@@ -72,7 +72,7 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
                     .with_masks(&[
                         PhysicsLayers::Ground,
                         PhysicsLayers::CliffEdge,
-                        PhysicsLayers::PProj,
+                        PhysicsLayers::PlayerProj,
                     ]),
                 velocity: Velocity::from_linear(Vec3::new(facing_mul * 2., 0., 0.)),
                 ..Default::default()
