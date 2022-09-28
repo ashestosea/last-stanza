@@ -1,4 +1,4 @@
-use crate::enemies::{Enemy, Facing, Hop};
+use crate::enemies::{Enemy, Facing, Hop, SpawnProjectile};
 use crate::loading::TextureAssets;
 use crate::{DynamicActorBundle, GameState, PhysicsLayers};
 use bevy::prelude::*;
@@ -30,6 +30,7 @@ pub struct HopperPlugin;
 impl Plugin for HopperPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(SystemSet::on_update(GameState::Playing).with_system(spawn))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(shoot))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(animate));
     }
 }
@@ -92,6 +93,16 @@ fn spawn(
             },
             ..Default::default()
         });
+    }
+}
+
+fn shoot(mut commands: Commands, query: Query<&Transform, With<Hopper>>) {
+    for t in query.iter() {
+        if rand::thread_rng().gen_range(0.0..1.0) > 0.9999 {
+            commands
+                .spawn()
+                .insert(SpawnProjectile { pos: t.translation });
+        }
     }
 }
 

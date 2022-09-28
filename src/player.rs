@@ -3,7 +3,7 @@ use crate::{loading::TextureAssets, DynamicActorBundle, GameState, PhysicsLayers
 use bevy::{prelude::*, render::camera::RenderTarget};
 use heron::prelude::*;
 
-const PLAYER_CENTER: Vec2 = Vec2::new(0., 8.);
+pub const PLAYER_CENTER: Vec2 = Vec2::new(0., 8.);
 
 pub struct PlayerPlugin;
 
