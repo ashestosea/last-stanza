@@ -1,4 +1,5 @@
-use crate::enemies::{Enemy, Facing, Hop};
+use crate::enemies::{Enemy, Facing, Hop, ExplosionBundle, Explosion};
+use crate::loading::TextureAssets;
 use crate::{DynamicActorBundle, GameState, PhysicsLayers};
 use bevy::prelude::*;
 use heron::prelude::*;
@@ -28,7 +29,8 @@ pub struct GiantPlugin;
 
 impl Plugin for GiantPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_update(GameState::Playing).with_system(spawn));
+        app.add_system_set(SystemSet::on_update(GameState::Playing).with_system(spawn))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(health));
     }
 }
 
@@ -85,5 +87,42 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
             },
             ..Default::default()
         });
+    }
+}
+
+fn health(
+    mut commands: Commands,
+    query: Query<(Entity, &Enemy, &Transform), (With<Giant>, Changed<Enemy>)>,
+    texture_assets: Res<TextureAssets>,
+) {
+    for (entity, enemy, trans) in query.iter() {
+        if enemy.health <= 0 {
+            let _ = &commands.entity(entity).despawn();
+                println!("enemy ded");
+
+            // Spawn Explosion
+            commands.spawn().insert_bundle(ExplosionBundle {
+                sprite_bundle: SpriteSheetBundle {
+                    texture_atlas: texture_assets.explosion.clone(),
+                    sprite: TextureAtlasSprite {
+                        custom_size: Some(Vec2::new(
+                            enemy.health.abs() as f32 * 2.,
+                            enemy.health.abs() as f32 * 2.,
+                        )),
+                        ..Default::default()
+                    },
+                    transform: Transform::from_translation(trans.translation),
+                    ..Default::default()
+                },
+                collision_shape: CollisionShape::Sphere {
+                    radius: enemy.health.abs() as f32,
+                },
+                explosion: Explosion {
+                    power: enemy.health.abs(),
+                    timer: Timer::from_seconds(0.5, false),
+                },
+                ..Default::default()
+            });
+        }
     }
 }

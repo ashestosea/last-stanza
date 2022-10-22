@@ -47,7 +47,7 @@ pub(crate) struct Enemy {
 impl Default for Enemy {
     fn default() -> Self {
         Self {
-            health: Default::default(),
+            health: 1,
             facing: Facing::Left,
         }
     }
@@ -187,7 +187,6 @@ impl Plugin for EnemiesPlugin {
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop_grounding))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_health))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_cleanup))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_animate))
         .init_resource::<SpawnRates>()
@@ -354,42 +353,6 @@ fn enemy_hits(
                     }
                 }
             }
-        }
-    }
-}
-
-fn enemy_health(
-    mut commands: Commands,
-    query: Query<(Entity, &Enemy, &Transform), Changed<Enemy>>,
-    texture_assets: Res<TextureAssets>,
-) {
-    for (entity, enemy, trans) in query.iter() {
-        if enemy.health <= 0 {
-            let _ = &commands.entity(entity).despawn();
-
-            // Spawn Explosion
-            commands.spawn().insert_bundle(ExplosionBundle {
-                sprite_bundle: SpriteSheetBundle {
-                    texture_atlas: texture_assets.explosion.clone(),
-                    sprite: TextureAtlasSprite {
-                        custom_size: Some(Vec2::new(
-                            enemy.health.abs() as f32 * 2.,
-                            enemy.health.abs() as f32 * 2.,
-                        )),
-                        ..Default::default()
-                    },
-                    transform: Transform::from_translation(trans.translation),
-                    ..Default::default()
-                },
-                collision_shape: CollisionShape::Sphere {
-                    radius: enemy.health.abs() as f32,
-                },
-                explosion: Explosion {
-                    power: enemy.health.abs(),
-                    timer: Timer::from_seconds(0.5, false),
-                },
-                ..Default::default()
-            });
         }
     }
 }

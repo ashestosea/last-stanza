@@ -1,6 +1,6 @@
 use crate::{
-    enemies::{Enemy, Facing},
-    DynamicActorBundle, GameState, PhysicsLayers,
+    enemies::{Enemy, Facing, ExplosionBundle, Explosion},
+    DynamicActorBundle, GameState, PhysicsLayers, loading::TextureAssets,
 };
 use bevy::prelude::*;
 use heron::prelude::*;
@@ -31,7 +31,8 @@ impl Plugin for ClimberPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(climb))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(spawn));
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(spawn))
+            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(health));
     }
 }
 
@@ -94,6 +95,43 @@ fn climb(mut query: Query<(&mut Velocity, &Collisions, &Enemy), With<Climber>>) 
                 let mul: f32 = enemy.facing.into();
                 velocity.linear = Vec3::new(1. * mul, 9., 0.);
             }
+        }
+    }
+}
+
+fn health(
+    mut commands: Commands,
+    query: Query<(Entity, &Enemy, &Transform), (With<Climber>, Changed<Enemy>)>,
+    texture_assets: Res<TextureAssets>,
+) {
+    for (entity, enemy, trans) in query.iter() {
+        if enemy.health <= 0 {
+            let _ = &commands.entity(entity).despawn();
+                println!("enemy ded");
+
+            // Spawn Explosion
+            commands.spawn().insert_bundle(ExplosionBundle {
+                sprite_bundle: SpriteSheetBundle {
+                    texture_atlas: texture_assets.explosion.clone(),
+                    sprite: TextureAtlasSprite {
+                        custom_size: Some(Vec2::new(
+                            enemy.health.abs() as f32 * 2.,
+                            enemy.health.abs() as f32 * 2.,
+                        )),
+                        ..Default::default()
+                    },
+                    transform: Transform::from_translation(trans.translation),
+                    ..Default::default()
+                },
+                collision_shape: CollisionShape::Sphere {
+                    radius: enemy.health.abs() as f32,
+                },
+                explosion: Explosion {
+                    power: enemy.health.abs(),
+                    timer: Timer::from_seconds(0.5, false),
+                },
+                ..Default::default()
+            });
         }
     }
 }
