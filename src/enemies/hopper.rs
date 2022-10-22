@@ -1,4 +1,5 @@
-use crate::enemies::{Enemy, Facing, Hop, SpawnProjectile, ExplosionBundle, Explosion};
+use crate::enemies::{Enemy, Facing, Hop, ExplosionBundle, Explosion};
+use crate::enemies::enemy_projectile::ProjectileSpawn;
 use crate::loading::TextureAssets;
 use crate::{DynamicActorBundle, GameState, PhysicsLayers};
 use bevy::prelude::*;
@@ -99,10 +100,10 @@ fn spawn(
 
 fn shoot(mut commands: Commands, query: Query<&Transform, With<Hopper>>) {
     for t in query.iter() {
-        if rand::thread_rng().gen_range(0.0..1.0) > 0.9999 {
+        if rand::thread_rng().gen_range(0.0..1.0) > 0.99 {
             commands
                 .spawn()
-                .insert(SpawnProjectile { pos: t.translation });
+                .insert(ProjectileSpawn { pos: t.translation });
         }
     }
 }

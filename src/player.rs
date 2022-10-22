@@ -82,8 +82,13 @@ fn spawn_projectile(mut commands: Commands, texture_assets: Res<TextureAssets>) 
                 restitution: 1.5,
                 ..Default::default()
             },
-            layers: CollisionLayers::new(PhysicsLayers::PlayerProj, PhysicsLayers::Ground)
-                .with_mask(PhysicsLayers::Enemy),
+            layers: CollisionLayers::none()
+                .with_group(PhysicsLayers::PlayerProj)
+                .with_masks(&[
+                    PhysicsLayers::Ground,
+                    PhysicsLayers::Enemy,
+                    PhysicsLayers::EnemyProj,
+                ]),
             ..Default::default()
         });
 }
@@ -175,7 +180,11 @@ fn projectile_destruction(
 ) {
     for (entity, mut transform, collisions) in query.iter_mut() {
         for c in collisions.collision_data() {
-            if c.collision_layers().contains_group(PhysicsLayers::Enemy) {
+            if c.collision_layers().contains_group(PhysicsLayers::Enemy)
+                && !c
+                    .collision_layers()
+                    .contains_group(PhysicsLayers::EnemyProj)
+            {
                 transform.translation = Vec3::NEG_Y * 50.;
                 commands.entity(entity).remove::<RigidBody>();
             }

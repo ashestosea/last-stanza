@@ -1,11 +1,11 @@
 mod climber;
 mod giant;
 mod hopper;
+mod enemy_projectile;
 
 pub use crate::enemies::giant::Giant;
 use crate::events::EnemySpawnsChanged;
-use crate::loading::TextureAssets;
-use crate::player::{self, PlayerProjectile};
+use crate::player::PlayerProjectile;
 use crate::{GameState, PhysicsLayers};
 use benimator::FrameRate;
 use bevy::prelude::*;
@@ -15,6 +15,7 @@ use rand::Rng;
 use self::climber::{ClimberPlugin, ClimberSpawn};
 use self::giant::{GiantPlugin, GiantSpawn};
 use self::hopper::{HopperPlugin, HopperSpawn};
+use self::enemy_projectile::ProjectilePlugin;
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Facing {
@@ -97,45 +98,6 @@ struct ExplosionAnimation(benimator::Animation);
 struct ExplosionAnimationState(benimator::State);
 
 #[derive(Component)]
-struct SpawnProjectile {
-    pos: Vec3,
-}
-
-#[derive(Default, Component)]
-struct EnemyProjectile;
-
-#[derive(Bundle)]
-struct EnemyProjectileBundle {
-    #[bundle]
-    sprite: SpriteBundle,
-    rigidbody: RigidBody,
-    collision_shape: CollisionShape,
-    collision_layers: CollisionLayers,
-    velocity: Velocity,
-    projectile: EnemyProjectile,
-}
-
-// #[derive(Component, Deref)]
-// struct ProjectileAnimation(benimator::Animation);
-
-// // Create the player component
-// #[derive(Default, Component, Deref, DerefMut)]
-// struct ProjectileAnimationState(benimator::State);
-
-impl Default for EnemyProjectileBundle {
-    fn default() -> Self {
-        Self {
-            sprite: Default::default(),
-            rigidbody: RigidBody::KinematicVelocityBased,
-            collision_shape: CollisionShape::Sphere { radius: 0.3 },
-            collision_layers: CollisionLayers::new(PhysicsLayers::EnemyProj, PhysicsLayers::Player),
-            velocity: Default::default(),
-            projectile: Default::default(),
-        }
-    }
-}
-
-#[derive(Component)]
 struct Sneaker;
 
 #[derive(Component)]
@@ -183,7 +145,6 @@ impl Plugin for EnemiesPlugin {
             SystemSet::on_update(GameState::Playing).with_system(update_enemy_spawns),
         )
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_spawner))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(projectile_spawner))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop_grounding))
         .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
@@ -195,7 +156,8 @@ impl Plugin for EnemiesPlugin {
         })
         .add_plugin(HopperPlugin)
         .add_plugin(ClimberPlugin)
-        .add_plugin(GiantPlugin);
+        .add_plugin(GiantPlugin)
+        .add_plugin(ProjectilePlugin);
     }
 }
 
@@ -266,35 +228,6 @@ fn enemy_spawner(
         commands.spawn().insert(GiantSpawn);
         #[allow(clippy::needless_return)]
         return;
-    }
-}
-
-fn projectile_spawner(
-    projectile_query: Query<(Entity, &SpawnProjectile)>,
-    mut commands: Commands,
-    textures: Res<TextureAssets>,
-) {
-    for (entity, spawn) in projectile_query.iter() {
-        // Spawn projectile
-        println!("Spawn Projectile");
-        let vec = (player::PLAYER_CENTER.extend(0.) - spawn.pos).normalize();
-
-        commands.spawn().insert_bundle(EnemyProjectileBundle {
-            sprite: SpriteBundle {
-                texture: textures.circle.clone(),
-                sprite: Sprite {
-                    color: Color::PINK,
-                    custom_size: Some(Vec2::new(0.3, 0.3)),
-                    ..Default::default()
-                },
-                transform: Transform::from_translation(spawn.pos),
-                ..Default::default()
-            },
-            velocity: Velocity::from_linear(vec),
-            ..Default::default()
-        });
-
-        commands.entity(entity).despawn();
     }
 }
 
