@@ -1,12 +1,13 @@
 use crate::{
-    enemies::{Enemy, Facing, ExplosionBundle, Explosion},
-    DynamicActorBundle, GameState, PhysicsLayers, loading::TextureAssets,
+    enemies::{Enemy, Explosion, ExplosionBundle, Facing},
+    loading::TextureAssets,
+    DynamicActorBundle, GameState, PhysicLayer,
 };
 use bevy::prelude::*;
-use heron::prelude::*;
+use bevy_rapier2d::prelude::*;
 use rand::Rng;
 
-const CLIMBER_SHAPE: Vec2 = Vec2::new(1., 2.);
+const CLIMBER_SHAPE: Vec2 = Vec2::new(1.0, 2.0);
 
 #[derive(Component, Default)]
 pub(crate) struct ClimberSpawn;
@@ -20,7 +21,6 @@ struct ClimberBundle {
     sprite_bundle: SpriteBundle,
     #[bundle]
     dynamic_actor_bundle: DynamicActorBundle,
-    rotation_constraints: RotationConstraints,
     enemy: Enemy,
     clibmer: Climber,
 }
@@ -29,8 +29,7 @@ pub struct ClimberPlugin;
 
 impl Plugin for ClimberPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(climb))
+        app.add_system_set(SystemSet::on_update(GameState::Playing).with_system(climb))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(spawn))
             .add_system_set(SystemSet::on_update(GameState::Playing).with_system(health));
     }
@@ -49,7 +48,7 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
 
         commands.spawn().insert_bundle(ClimberBundle {
             sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(24. * -facing_mul, 0., 0.)),
+                transform: Transform::from_translation(Vec3::new(24.0 * -facing_mul, 0.0, 0.0)),
                 sprite: Sprite {
                     color: Color::MIDNIGHT_BLUE,
                     custom_size: Some(CLIMBER_SHAPE),
@@ -59,41 +58,40 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
             },
             dynamic_actor_bundle: DynamicActorBundle {
                 rigidbody: RigidBody::Dynamic,
-                material: PhysicMaterial {
-                    friction: 0.,
-                    restitution: 0.,
-                    ..Default::default()
-                },
-                shape: CollisionShape::Cuboid {
-                    half_extends: CLIMBER_SHAPE.extend(0.) / 2.,
-                    border_radius: None,
-                },
-                layers: CollisionLayers::none()
-                    .with_groups(&[PhysicsLayers::Enemy, PhysicsLayers::Climber])
-                    .with_masks(&[
-                        PhysicsLayers::Ground,
-                        PhysicsLayers::CliffEdge,
-                        PhysicsLayers::PlayerProj,
-                    ]),
-                velocity: Velocity::from_linear(Vec3::new(facing_mul * 2., 0., 0.)),
+                collider: Collider::cuboid(CLIMBER_SHAPE.x, CLIMBER_SHAPE.y),
+                collision_groups: CollisionGroups::new(
+                    (PhysicLayer::ENEMY | PhysicLayer::CLIMBER).into(),
+                    (PhysicLayer::GROUND | PhysicLayer::CLIFF_EDGE | PhysicLayer::PLAYER_PROJ)
+                        .into(),
+                ),
+                friction: Friction::coefficient(0.0),
+                restitution: Restitution::coefficient(0.0),
+                velocity: Velocity::linear(Vec2::new(facing_mul * 2.0, 0.0)),
                 ..Default::default()
             },
-            rotation_constraints: RotationConstraints::lock(),
             enemy: Enemy { health: 1, facing },
             clibmer: Climber,
         });
     }
 }
 
-fn climb(mut query: Query<(&mut Velocity, &Collisions, &Enemy), With<Climber>>) {
-    for (mut velocity, collision, enemy) in query.iter_mut() {
-        for data in collision.collision_data() {
-            if data
-                .collision_layers()
-                .contains_group(PhysicsLayers::CliffEdge)
-            {
-                let mul: f32 = enemy.facing.into();
-                velocity.linear = Vec3::new(1. * mul, 9., 0.);
+fn climb(
+    mut query: Query<(&mut Velocity, &CollidingEntities, &Enemy), With<Climber>>,
+    sensor_query: Query<(Entity, &CollisionGroups), With<Sensor>>,
+) {
+    for (mut velocity, colliding_entities, enemy) in query.iter_mut() {
+        for e in colliding_entities.iter() {
+            for (entity, collision_groups) in sensor_query.iter() {
+                if e == entity {
+                    if collision_groups
+                        .memberships
+                        .contains(PhysicLayer::CLIFF_EDGE.into())
+                    {
+                        let mul: f32 = enemy.facing.into();
+                        velocity.linvel = Vec2::new(1.0 * mul, 9.0);
+                        return
+                    }
+                }
             }
         }
     }
@@ -107,7 +105,7 @@ fn health(
     for (entity, enemy, trans) in query.iter() {
         if enemy.health <= 0 {
             let _ = &commands.entity(entity).despawn();
-                println!("enemy ded");
+            println!("enemy ded");
 
             // Spawn Explosion
             commands.spawn().insert_bundle(ExplosionBundle {
@@ -115,17 +113,15 @@ fn health(
                     texture_atlas: texture_assets.explosion.clone(),
                     sprite: TextureAtlasSprite {
                         custom_size: Some(Vec2::new(
-                            enemy.health.abs() as f32 * 2.,
-                            enemy.health.abs() as f32 * 2.,
+                            enemy.health.abs() as f32 * 2.0,
+                            enemy.health.abs() as f32 * 2.0,
                         )),
                         ..Default::default()
                     },
                     transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },
-                collision_shape: CollisionShape::Sphere {
-                    radius: enemy.health.abs() as f32,
-                },
+                collider: Collider::ball(enemy.health.abs() as f32),
                 explosion: Explosion {
                     power: enemy.health.abs(),
                     timer: Timer::from_seconds(0.5, false),

@@ -1,9 +1,12 @@
+use crate::PhysicLayer;
+use crate::enemies::Enemy;
+use crate::enemies::enemy_projectile::Projectile;
 use crate::main_camera::MainCamera;
-use crate::{loading::TextureAssets, DynamicActorBundle, GameState, PhysicsLayers};
+use crate::{loading::TextureAssets, DynamicActorBundle, GameState};
 use bevy::{prelude::*, render::camera::RenderTarget};
-use heron::prelude::*;
+use bevy_rapier2d::prelude::*;
 
-pub const PLAYER_CENTER: Vec2 = Vec2::new(0., 8.);
+pub const PLAYER_CENTER: Vec2 = Vec2::new(0.0, 8.0);
 
 pub struct PlayerPlugin;
 
@@ -56,7 +59,7 @@ fn spawn_player(mut commands: Commands) {
                 custom_size: Some(Vec2::new(0.75, 1.5)),
                 ..Default::default()
             },
-            transform: Transform::from_translation(PLAYER_CENTER.extend(0.)),
+            transform: Transform::from_translation(PLAYER_CENTER.extend(0.0)),
             ..Default::default()
         })
         .insert(Player);
@@ -71,24 +74,19 @@ fn spawn_projectile(mut commands: Commands, texture_assets: Res<TextureAssets>) 
                 color: Color::GREEN,
                 ..Default::default()
             },
-            transform: Transform::from_translation(Vec3::new(-10., 45., 0.)),
+            transform: Transform::from_translation(Vec3::new(-10.0, 45.0, 0.0)),
             ..Default::default()
         })
         .insert(PlayerProjectile { size: 1 })
         .insert_bundle(DynamicActorBundle {
-            shape: CollisionShape::Sphere { radius: 0.5 },
-            material: PhysicMaterial {
-                friction: 0.,
-                restitution: 1.5,
-                ..Default::default()
-            },
-            layers: CollisionLayers::none()
-                .with_group(PhysicsLayers::PlayerProj)
-                .with_masks(&[
-                    PhysicsLayers::Ground,
-                    PhysicsLayers::Enemy,
-                    PhysicsLayers::EnemyProj,
-                ]),
+            locked_axes: LockedAxes::all(),
+            collider: Collider::ball(0.5),
+            collision_groups: CollisionGroups::new(
+                PhysicLayer::PLAYER_PROJ.into(),
+                (PhysicLayer::GROUND | PhysicLayer::ENEMY | PhysicLayer::ENEMY_PROJ).into(),
+            ),
+            friction: Friction { coefficient: 0.0, combine_rule: CoefficientCombineRule::Min },
+            restitution: Restitution { coefficient: 1.5, combine_rule: Default::default() },
             ..Default::default()
         });
 }
@@ -100,10 +98,10 @@ fn aim(
 ) {
     for (mut proj, mut proj_trans, mut charge) in proj_query.iter_mut() {
         charge.timer.tick(time.delta());
-        let c = (charge.timer.elapsed_secs().sin().powi(2) * 4.) + 1.;
+        let c = (charge.timer.elapsed_secs().sin().powi(2) * 4.0) + 1.0;
         proj.size = c.round() as i32;
         proj_trans.scale = Vec3::ONE * (0.5 + (0.05 * proj.size as f32));
-        proj_trans.translation = (2. * mouse_data.vec_from_player + PLAYER_CENTER).extend(0.);
+        proj_trans.translation = (2.0 * mouse_data.vec_from_player + PLAYER_CENTER).extend(0.0);
     }
 }
 
@@ -113,7 +111,7 @@ fn launch(
     mut query: Query<(Entity, &mut Velocity), (With<PlayerProjectile>, With<Fired>)>,
 ) {
     for (entity, mut vel) in query.iter_mut() {
-        vel.linear = mouse_data.vec_from_player.extend(0.) * 12.;
+        vel.linvel = mouse_data.vec_from_player * 12.0;
 
         commands.entity(entity).remove::<Fired>();
     }
@@ -138,9 +136,9 @@ fn mouse_input(
 
     for e in events.iter() {
         let window_size = Vec2::new(window.width() as f32, window.height() as f32);
-        let ndc = (e.position / window_size) * 2. - Vec2::ONE;
+        let ndc = (e.position / window_size) * 2.0 - Vec2::ONE;
         let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix().inverse();
-        mouse_data.world_pos = ndc_to_world.project_point3(ndc.extend(-1.)).truncate();
+        mouse_data.world_pos = ndc_to_world.project_point3(ndc.extend(-1.0)).truncate();
     }
 
     let a = Vec2::Y;
@@ -148,8 +146,8 @@ fn mouse_input(
     let mut angle = ((a.x * b.x) + (a.y * b.y)).acos();
     let cross = (a.x * b.y) - (a.y * b.x);
 
-    if cross < 0. {
-        angle *= -1.;
+    if cross < 0.0 {
+        angle *= -1.0;
     }
 
     mouse_data.vec_from_player = Vec2::from_angle(angle).rotate(Vec2::Y).normalize();
@@ -159,9 +157,9 @@ fn mouse_input(
         commands
             .entity(entity)
             .remove::<RigidBody>()
-            .insert(RigidBody::Static)
+            .insert(RigidBody::Fixed)
             .insert(Charging {
-                timer: Timer::from_seconds(10., true),
+                timer: Timer::from_seconds(10.0, true),
             });
     } else if input.just_released(MouseButton::Left) {
         let entity = proj_query.single();
@@ -176,17 +174,16 @@ fn mouse_input(
 
 fn projectile_destruction(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Transform, &Collisions), With<PlayerProjectile>>,
+    mut proj_query: Query<(Entity, &mut Transform, &CollidingEntities), With<PlayerProjectile>>,
+    enemy_query: Query<Entity, (With<Enemy>, Without<Projectile>)>,
 ) {
-    for (entity, mut transform, collisions) in query.iter_mut() {
-        for c in collisions.collision_data() {
-            if c.collision_layers().contains_group(PhysicsLayers::Enemy)
-                && !c
-                    .collision_layers()
-                    .contains_group(PhysicsLayers::EnemyProj)
-            {
-                transform.translation = Vec3::NEG_Y * 50.;
-                commands.entity(entity).remove::<RigidBody>();
+    for (proj_entity, mut proj_trans, collisions) in proj_query.iter_mut() {
+        for c in collisions.iter() {
+            for enemy_entity in enemy_query.iter() {
+                if enemy_entity == c {
+                    proj_trans.translation = Vec3::NEG_Y * 50.0;
+                    commands.entity(proj_entity).remove::<RigidBody>();
+                }
             }
         }
     }

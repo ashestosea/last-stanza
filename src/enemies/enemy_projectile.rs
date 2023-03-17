@@ -1,30 +1,26 @@
-use crate::enemies::{Enemy, ExplosionBundle, Explosion};
+use crate::enemies::{Enemy};
 use crate::loading::TextureAssets;
 use crate::player::PLAYER_CENTER;
-use crate::{GameState, PhysicsLayers};
+use crate::{DynamicActorBundle, GameState, PhysicLayer};
 use bevy::prelude::*;
-use heron::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 const PROJECTILE_SHAPE: Vec2 = Vec2::new(0.3, 0.3);
 
 #[derive(Component, Default)]
 pub(crate) struct ProjectileSpawn {
-    pub pos: Vec3,
+    pub pos: Vec2,
 }
 
 #[derive(Component, Default)]
-struct Projectile;
+pub(crate) struct Projectile;
 
 #[derive(Bundle, Default)]
 struct ProjectileParentBundle {
     #[bundle]
     spacial_bundle: SpatialBundle,
-    rigidbody: RigidBody,
-    collision_shape: CollisionShape,
-    collision_layers: CollisionLayers,
-    collisions: Collisions,
-    rotation_constraints: RotationConstraints,
-    velocity: Velocity,
+    #[bundle]
+    dynamic_actor_bundle: DynamicActorBundle,
     projectile: Projectile,
     enemy: Enemy,
 }
@@ -33,11 +29,9 @@ struct ProjectileParentBundle {
 struct ProjectileChildBundle {
     #[bundle]
     sprite: SpriteBundle,
-    rigidbody: RigidBody,
-    collision_shape: CollisionShape,
-    collision_layers: CollisionLayers,
-    collisions: Collisions,
-    // rotation_constraints: RotationConstraints,
+    #[bundle]
+    dynamic_actor_bundle: DynamicActorBundle,
+    sensor: Sensor,
     projectile: Projectile,
     enemy: Enemy,
 }
@@ -66,14 +60,17 @@ fn spawn(
         commands
             .spawn_bundle(ProjectileParentBundle {
                 spacial_bundle: SpatialBundle {
-                    transform: Transform::from_translation(spawn.pos),
+                    transform: Transform::from_xyz(spawn.pos.x, spawn.pos.y, 0.0),
                     ..Default::default()
                 },
-                rigidbody: RigidBody::KinematicVelocityBased,
-                collision_shape: CollisionShape::Sphere { radius: 0.001 },
-                collision_layers: CollisionLayers::none(),
-                rotation_constraints: RotationConstraints::lock(),
-                velocity: Velocity::from_linear((PLAYER_CENTER.extend(0.) - spawn.pos).normalize()),
+                dynamic_actor_bundle: DynamicActorBundle {
+                    rigidbody: RigidBody::KinematicVelocityBased,
+                    collider: Collider::ball(0.001),
+                    collision_groups: CollisionGroups::default(),
+                    locked_axes: LockedAxes::ROTATION_LOCKED,
+                    velocity: Velocity::linear((PLAYER_CENTER - spawn.pos).normalize()),
+                    ..Default::default()
+                },
                 projectile: Default::default(),
                 enemy: Enemy {
                     health: 1,
@@ -93,11 +90,14 @@ fn spawn(
                         },
                         ..Default::default()
                     },
-                    rigidbody: RigidBody::Sensor,
-                    collision_shape: CollisionShape::Sphere { radius: 0.3 },
-                    collision_layers: CollisionLayers::none()
-                        .with_groups(&[PhysicsLayers::Enemy, PhysicsLayers::EnemyProj])
-                        .with_masks(&[PhysicsLayers::Player, PhysicsLayers::PlayerProj]),
+                    dynamic_actor_bundle: DynamicActorBundle {
+                        collider: Collider::ball(0.3),
+                        collision_groups: CollisionGroups::new(
+                            (PhysicLayer::ENEMY | PhysicLayer::ENEMY_PROJ).into(),
+                            (PhysicLayer::PLAYER | PhysicLayer::PLAYER_PROJ).into(),
+                        ),
+                        ..Default::default()
+                    },
                     ..Default::default()
                 });
             });
@@ -120,8 +120,8 @@ fn health(
             //         texture_atlas: texture_assets.explosion.clone(),
             //         sprite: TextureAtlasSprite {
             //             custom_size: Some(Vec2::new(
-            //                 enemy.health.abs() as f32 * 2.,
-            //                 enemy.health.abs() as f32 * 2.,
+            //                 enemy.health.abs() as f32 * 2.0,
+            //                 enemy.health.abs() as f32 * 2.0,
             //             )),
             //             ..Default::default()
             //         },
@@ -142,11 +142,11 @@ fn health(
 }
 
 fn projectile_destruction(
-    query: Query<(Entity, &Collisions), With<Projectile>>,
+    query: Query<(Entity, &CollidingEntities), With<Projectile>>,
     mut commands: Commands,
 ) {
-    for (entity, collisions) in query.iter() {
-        if !collisions.is_empty() {
+    for (entity, colliding_entities) in query.iter() {
+        if !colliding_entities.is_empty() {
             println!("enemy proj collision");
             commands.entity(entity).despawn();
         }
@@ -155,9 +155,9 @@ fn projectile_destruction(
 
 fn animate(mut query: Query<(&mut TextureAtlasSprite, &Velocity)>) {
     for (mut texture, velocity) in query.iter_mut() {
-        if velocity.linear.y > 0.2 {
+        if velocity.linvel.y > 0.2 {
             texture.index = 0;
-        } else if velocity.linear.y < -0.2 {
+        } else if velocity.linvel.y < -0.2 {
             texture.index = 2;
         } else {
             texture.index = 1;

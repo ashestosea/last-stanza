@@ -1,11 +1,11 @@
 use crate::enemies::{Enemy, Facing, Hop, ExplosionBundle, Explosion};
 use crate::loading::TextureAssets;
-use crate::{DynamicActorBundle, GameState, PhysicsLayers};
+use crate::{DynamicActorBundle, GameState, PhysicLayer};
 use bevy::prelude::*;
-use heron::prelude::*;
+use bevy_rapier2d::prelude::*;
 use rand::Rng;
 
-const GIANT_SHAPE: Vec2 = Vec2::new(3., 6.);
+const GIANT_SHAPE: Vec2 = Vec2::new(3.0, 6.0);
 
 #[derive(Component, Default)]
 pub(crate) struct GiantSpawn;
@@ -19,7 +19,7 @@ struct GiantBundle {
     sprite_bundle: SpriteBundle,
     #[bundle]
     dynamic_actor_bundle: DynamicActorBundle,
-    rotation_constraints: RotationConstraints,
+    locked_axes: LockedAxes,
     enemy: Enemy,
     giant: Giant,
     hop: Hop,
@@ -52,7 +52,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
 
         commands.spawn().insert_bundle(GiantBundle {
             sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(24. * -facing_mul, 6., 0.)),
+                transform: Transform::from_translation(Vec3::new(24.0 * -facing_mul, 6.0, 0.0)),
                 sprite: Sprite {
                     color: Color::BLUE,
                     custom_size: Some(GIANT_SHAPE),
@@ -61,25 +61,15 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
-                material: PhysicMaterial {
-                    density: 1.,
-                    friction: 2.,
-                    restitution: 0.2,
-                },
-                shape: CollisionShape::Cuboid {
-                    half_extends: GIANT_SHAPE.extend(0.) / 2.,
-                    border_radius: None,
-                },
-                layers: CollisionLayers::none()
-                    .with_groups(&[PhysicsLayers::Enemy, PhysicsLayers::Giant])
-                    .with_masks(&[
-                        PhysicsLayers::Ground,
-                        // PhysicsLayers::Giant,
-                        PhysicsLayers::PlayerProj,
-                    ]),
+                collider: Collider::cuboid(GIANT_SHAPE.x, GIANT_SHAPE.y),
+                collision_groups: CollisionGroups::new(
+                    (PhysicLayer::ENEMY | PhysicLayer::GIANT).into(),
+                    (PhysicLayer::GROUND | PhysicLayer::PLAYER_PROJ).into()
+                ),
+                friction: Friction::coefficient(2.0),
+                restitution: Restitution::coefficient(0.2),
                 ..Default::default()
             },
-            rotation_constraints: RotationConstraints::lock(),
             enemy: Enemy { health: 50, facing },
             hop: Hop {
                 grounded: false,
@@ -106,17 +96,15 @@ fn health(
                     texture_atlas: texture_assets.explosion.clone(),
                     sprite: TextureAtlasSprite {
                         custom_size: Some(Vec2::new(
-                            enemy.health.abs() as f32 * 2.,
-                            enemy.health.abs() as f32 * 2.,
+                            enemy.health.abs() as f32 * 2.0,
+                            enemy.health.abs() as f32 * 2.0,
                         )),
                         ..Default::default()
                     },
                     transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },
-                collision_shape: CollisionShape::Sphere {
-                    radius: enemy.health.abs() as f32,
-                },
+                collider: Collider::ball(enemy.health.abs() as f32),
                 explosion: Explosion {
                     power: enemy.health.abs(),
                     timer: Timer::from_seconds(0.5, false),

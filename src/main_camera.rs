@@ -3,10 +3,9 @@ use crate::{
     GameState,
 };
 use bevy::{prelude::*, render::camera::ScalingMode};
-use heron::utils::NearZero;
 use rand::Rng;
 
-const CAM_POS: Vec3 = Vec3::new(0., 8., 0.);
+const CAM_POS: Vec3 = Vec3::new(0.0, 8.0, 0.0);
 
 #[derive(Component)]
 pub struct MainCamera;
@@ -34,7 +33,7 @@ fn setup_camera(mut commands: Commands) {
         .spawn_bundle(Camera2dBundle {
             transform: Transform::from_translation(CAM_POS),
             projection: OrthographicProjection {
-                scaling_mode: ScalingMode::FixedHorizontal(30.),
+                scaling_mode: ScalingMode::FixedHorizontal(30.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -48,14 +47,14 @@ fn explosion_trauma(
     mut trauma_query: Query<&mut CameraTrauma>,
 ) {
     for ex in explosion_query.iter() {
-        trauma_query.single_mut().trauma += (ex.power as f32 / 10.).clamp(0., 1.);
+        trauma_query.single_mut().trauma += (ex.power as f32 / 10.0).clamp(0.0, 1.0);
     }
 }
 
 fn giant_steps(giant_query: Query<&Hop, With<Giant>>, mut trauma_query: Query<&mut CameraTrauma>) {
     for g in giant_query.iter() {
         if g.grounded {
-            trauma_query.single_mut().trauma += 0.5_f32.clamp(0., 1.);
+            trauma_query.single_mut().trauma += 0.5_f32.clamp(0.0, 1.0);
         }
     }
 }
@@ -70,16 +69,17 @@ fn camera_shake(
 
     trans.translation = CAM_POS;
     trans.rotation = Quat::IDENTITY;
-    if trauma.trauma.is_near_zero() {
+    
+    if trauma.trauma.abs() < f32::EPSILON {
         return;
     }
 
-    let shake = trauma.trauma.powf(3.);
+    let shake = trauma.trauma.powf(3.0);
 
     trans.translation.x += 0.1 * shake * rand::thread_rng().gen_range(-1.0..1.0);
     trans.translation.y += 0.1 * shake * rand::thread_rng().gen_range(-1.0..1.0);
     trans.rotate_z(0.005 * shake * rand::thread_rng().gen_range(-1.0..1.0));
 
-    trauma.trauma -= time.delta_seconds() * 3.;
-    trauma.trauma = trauma.trauma.clamp(0., 1.);
+    trauma.trauma -= time.delta_seconds() * 3.0;
+    trauma.trauma = trauma.trauma.clamp(0.0, 1.0);
 }

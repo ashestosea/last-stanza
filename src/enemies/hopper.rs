@@ -1,12 +1,12 @@
-use crate::enemies::{Enemy, Facing, Hop, ExplosionBundle, Explosion};
 use crate::enemies::enemy_projectile::ProjectileSpawn;
+use crate::enemies::{Enemy, Explosion, ExplosionBundle, Facing, Hop};
 use crate::loading::TextureAssets;
-use crate::{DynamicActorBundle, GameState, PhysicsLayers};
+use crate::{DynamicActorBundle, GameState, PhysicLayer};
 use bevy::prelude::*;
-use heron::prelude::*;
+use bevy_rapier2d::prelude::*;
 use rand::Rng;
 
-const HOPPER_SHAPE: Vec2 = Vec2::new(2., 2.);
+const HOPPER_SHAPE: Vec2 = Vec2::new(2.0, 2.0);
 
 #[derive(Component, Default)]
 pub(crate) struct HopperSpawn;
@@ -20,7 +20,6 @@ struct HopperBundle {
     sprite_bundle: SpriteSheetBundle,
     #[bundle]
     dynamic_actor_bundle: DynamicActorBundle,
-    rotation_constraints: RotationConstraints,
     enemy: Enemy,
     hopper: Hopper,
     hop: Hop,
@@ -60,7 +59,7 @@ fn spawn(
         commands.spawn().insert_bundle(HopperBundle {
             sprite_bundle: SpriteSheetBundle {
                 texture_atlas: texture_assets.hopper.clone(),
-                transform: Transform::from_translation(Vec3::new(24. * -facing_mul, 6., 0.)),
+                transform: Transform::from_translation(Vec3::new(24.0 * -facing_mul, 6.0, 0.0)),
                 sprite: TextureAtlasSprite {
                     flip_x: facing.into(),
                     custom_size: Some(HOPPER_SHAPE),
@@ -69,25 +68,15 @@ fn spawn(
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
-                material: PhysicMaterial {
-                    density: 1.,
-                    friction: 2.,
-                    restitution: 0.2,
-                },
-                shape: CollisionShape::Cuboid {
-                    half_extends: HOPPER_SHAPE.extend(0.) / 2.,
-                    border_radius: None,
-                },
-                layers: CollisionLayers::none()
-                    .with_groups(&[PhysicsLayers::Enemy, PhysicsLayers::Hopper])
-                    .with_masks(&[
-                        PhysicsLayers::Ground,
-                        PhysicsLayers::Hopper,
-                        PhysicsLayers::PlayerProj,
-                    ]),
+                collider: Collider::cuboid(HOPPER_SHAPE.x / 2.0, HOPPER_SHAPE.y / 2.0),
+                collision_groups: CollisionGroups::new(
+                    (PhysicLayer::ENEMY | PhysicLayer::HOPPER).into(),
+                    (PhysicLayer::GROUND | PhysicLayer::HOPPER | PhysicLayer::PLAYER_PROJ).into(),
+                ),
+                friction: Friction::coefficient(2.0),
+                restitution: Restitution::coefficient(0.2),
                 ..Default::default()
             },
-            rotation_constraints: RotationConstraints::lock(),
             enemy: Enemy { health: 1, facing },
             hop: Hop {
                 grounded: false,
@@ -103,16 +92,16 @@ fn shoot(mut commands: Commands, query: Query<&Transform, With<Hopper>>) {
         if rand::thread_rng().gen_range(0.0..1.0) > 0.99 {
             commands
                 .spawn()
-                .insert(ProjectileSpawn { pos: t.translation });
+                .insert(ProjectileSpawn { pos: t.translation.truncate() });
         }
     }
 }
 
 fn animate(mut query: Query<(&mut TextureAtlasSprite, &Velocity)>) {
     for (mut texture, velocity) in query.iter_mut() {
-        if velocity.linear.y > 0.2 {
+        if velocity.linvel.y > 0.2 {
             texture.index = 0;
-        } else if velocity.linear.y < -0.2 {
+        } else if velocity.linvel.y < -0.2 {
             texture.index = 2;
         } else {
             texture.index = 1;
@@ -128,7 +117,7 @@ fn health(
     for (entity, enemy, trans) in query.iter() {
         if enemy.health <= 0 {
             let _ = &commands.entity(entity).despawn();
-                println!("enemy ded");
+            println!("enemy ded");
 
             // Spawn Explosion
             commands.spawn().insert_bundle(ExplosionBundle {
@@ -136,17 +125,15 @@ fn health(
                     texture_atlas: texture_assets.explosion.clone(),
                     sprite: TextureAtlasSprite {
                         custom_size: Some(Vec2::new(
-                            enemy.health.abs() as f32 * 2.,
-                            enemy.health.abs() as f32 * 2.,
+                            enemy.health.abs() as f32 * 2.0,
+                            enemy.health.abs() as f32 * 2.0,
                         )),
                         ..Default::default()
                     },
                     transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },
-                collision_shape: CollisionShape::Sphere {
-                    radius: enemy.health.abs() as f32,
-                },
+                collider: Collider::ball(enemy.health.abs() as f32),
                 explosion: Explosion {
                     power: enemy.health.abs(),
                     timer: Timer::from_seconds(0.5, false),
