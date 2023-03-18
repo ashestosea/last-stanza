@@ -19,8 +19,9 @@ use bevy::prelude::*;
 use bevy::reflect::FromReflect;
 use bevy_rapier2d::prelude::*;
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 enum GameState {
+    #[default]
     Loading,
     Menu,
     Playing,
@@ -30,7 +31,7 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_state(GameState::Loading)
+        app.add_state::<GameState>()
             .add_plugin(LoadingPlugin)
             .add_plugin(EventsPlugin)
             .add_plugin(MainCameraPlugin)
@@ -43,9 +44,7 @@ impl Plugin for GamePlugin {
             // .add_plugin(PhysicsPlugin::default())
             .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
             // .add_plugin(RapierDebugRenderPlugin::default())
-            .add_system_set(
-                SystemSet::on_update(GameState::Playing).with_system(cleanup_far_entities),
-            );
+            .add_system(cleanup_far_entities.in_set(OnUpdate(GameState::Playing)));
             // .insert_resource(Gravity::from(Vec2::new(0.0, -9.81)));
 
         // #[cfg(debug_assertions)]

@@ -8,13 +8,12 @@ pub struct WorldPlugin;
 /// Player logic is only active during the State `GameState::Playing`
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(GameState::Playing).with_system(spawn_world));
+        app.add_system(spawn_world.in_schedule(OnEnter(GameState::Playing)));
     }
 }
 
 #[derive(Bundle)]
 struct WorldBundle {
-    #[bundle]
     transform_bundle: TransformBundle,
     rigidbody: RigidBody,
     collider: Collider,
@@ -33,7 +32,7 @@ impl Default for WorldBundle {
             collision_groups: CollisionGroups::new((PhysicLayer::GROUND).into(), Group::all()),
             friction: Friction::coefficient(0.0),
             restitution: Restitution::coefficient(0.0),
-            mass: ColliderMassProperties::Density(0.0)
+            mass: ColliderMassProperties::Density(0.0),
         }
     }
 }
@@ -48,7 +47,7 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
     let ground_shape = Vec2::new(50.0, 6.0);
 
     // Ground texture
-    commands.spawn().insert_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         texture: texture_assets.ground.clone(),
         sprite: Sprite {
             anchor: bevy::sprite::Anchor::TopCenter,
@@ -60,7 +59,7 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
     });
 
     // Ground collider
-    commands.spawn().insert_bundle(WorldBundle {
+    commands.spawn(WorldBundle {
         transform_bundle: TransformBundle {
             local: Transform::from_translation(pos),
             ..Default::default()
@@ -72,7 +71,7 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
     let mut step_shape = Vec2::new(0.0, step_height);
 
     // Ziggurat texture
-    commands.spawn().insert_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         texture: texture_assets.ziggurat.clone(),
         sprite: Sprite {
             anchor: bevy::sprite::Anchor::BottomCenter,
@@ -95,7 +94,7 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
         }
         pos.y = 1.0 + step_height * i as f32;
 
-        commands.spawn().insert_bundle(WorldBundle {
+        commands.spawn(WorldBundle {
             transform_bundle: TransformBundle {
                 local: Transform::from_translation(pos),
                 ..Default::default()
@@ -107,8 +106,7 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
         // Cliff sensor
         let cliff_shape = Vec2::new(step_shape.x + 1.5, 0.01);
         commands
-            .spawn()
-            .insert_bundle(TransformBundle {
+            .spawn(TransformBundle {
                 local: Transform::from_translation(Vec3::new(
                     pos.x,
                     pos.y - (step_shape.y / 4.0),

@@ -1,7 +1,4 @@
-use crate::{
-    events::TimeTable,
-    GameState,
-};
+use crate::{events::TimeTable, GameState};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use bevy_common_assets::toml::TomlAssetPlugin;
@@ -13,17 +10,16 @@ impl Plugin for LoadingPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(TomlAssetPlugin::<TimeTable>::new(&["time.toml"]))
             .add_loading_state(
-                LoadingState::new(GameState::Loading)
-                    .with_collection::<FontAssets>()
-                    // .with_collection::<AudioAssets>()
-                    .with_collection::<TextureAssets>()
-                    .with_collection::<GameData>()
-                    .continue_to_state(GameState::Menu),
-            );
+                LoadingState::new(GameState::Loading).continue_to_state(GameState::Menu),
+            )
+            .add_collection_to_loading_state::<_, FontAssets>(GameState::Loading)
+            .add_collection_to_loading_state::<_, TextureAssets>(GameState::Loading)
+            .add_collection_to_loading_state::<_, GameData>(GameState::Loading);
+        // .add_collection_to_loading_state::<_, AudioAssets>(GameState::Loading)
     }
 }
 
-#[derive(AssetCollection)]
+#[derive(Resource, AssetCollection)]
 pub struct FontAssets {
     #[asset(path = "fonts/FantasqueSansMono-Bold.ttf")]
     pub fantasque_sans: Handle<Font>,
@@ -35,7 +31,7 @@ pub struct FontAssets {
 //     pub flying: Handle<AudioSource>,
 // }
 
-#[derive(AssetCollection)]
+#[derive(Resource, AssetCollection)]
 pub struct TextureAssets {
     #[asset(path = "textures/ground.png")]
     pub ground: Handle<Image>,
@@ -51,7 +47,7 @@ pub struct TextureAssets {
     pub explosion: Handle<TextureAtlas>,
 }
 
-#[derive(AssetCollection)]
+#[derive(Resource, AssetCollection)]
 pub struct GameData {
     #[asset(path = "spawn-rates.time.toml")]
     pub spawn_rates: Handle<TimeTable>,

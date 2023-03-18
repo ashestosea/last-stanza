@@ -62,7 +62,6 @@ pub(crate) struct Explosion {
 
 #[derive(Bundle)]
 struct ExplosionBundle {
-    #[bundle]
     sprite_bundle: SpriteSheetBundle,
     rigidbody: RigidBody,
     collider: Collider,
@@ -114,11 +113,12 @@ pub(crate) struct Hop {
     pub power: Vec2,
 }
 
+#[derive(Resource)]
 struct SpawnTimer {
     timer: Timer,
 }
 
-#[derive(serde::Deserialize, Clone, Default)]
+#[derive(Resource, serde::Deserialize, Clone, Default)]
 pub struct SpawnRates {
     pub hopper: Option<f32>,
     pub climber: Option<f32>,
@@ -143,18 +143,21 @@ pub struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(
-            SystemSet::on_update(GameState::Playing).with_system(update_enemy_spawns),
+        app.add_systems(
+            (
+                update_enemy_spawns,
+                enemy_spawner,
+                hop,
+                hop_grounding,
+                enemy_hits,
+                explosion_cleanup,
+                explosion_animate,
+            )
+                .in_set(OnUpdate(GameState::Playing)),
         )
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_spawner))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(hop_grounding))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(enemy_hits))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_cleanup))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_animate))
         .init_resource::<SpawnRates>()
         .insert_resource(SpawnTimer {
-            timer: Timer::from_seconds(1.0, true),
+            timer: Timer::from_seconds(1.0, TimerMode::Repeating),
         })
         .add_plugin(HopperPlugin)
         .add_plugin(ClimberPlugin)
@@ -213,21 +216,21 @@ fn enemy_spawner(
     total_chance += spawn_chances.hopper.unwrap_or_default();
     if rng < total_chance {
         // Hopper::spawn(commands, facing, start_x);
-        commands.spawn().insert(HopperSpawn);
+        commands.spawn(HopperSpawn);
         return;
     }
 
     // Climber
     total_chance += spawn_chances.climber.unwrap_or_default();
     if rng < total_chance {
-        commands.spawn().insert(ClimberSpawn);
+        commands.spawn(ClimberSpawn);
         return;
     }
 
     // Giant
     total_chance += spawn_chances.giant.unwrap_or_default();
     if rng < total_chance {
-        commands.spawn().insert(GiantSpawn);
+        commands.spawn(GiantSpawn);
         #[allow(clippy::needless_return)]
         return;
     }

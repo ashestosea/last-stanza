@@ -17,9 +17,7 @@ pub(crate) struct Climber;
 
 #[derive(Bundle)]
 struct ClimberBundle {
-    #[bundle]
     sprite_bundle: SpriteBundle,
-    #[bundle]
     dynamic_actor_bundle: DynamicActorBundle,
     enemy: Enemy,
     clibmer: Climber,
@@ -29,9 +27,7 @@ pub struct ClimberPlugin;
 
 impl Plugin for ClimberPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_update(GameState::Playing).with_system(climb))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(spawn))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(health));
+        app.add_systems((climb, spawn, health).in_set(OnUpdate(GameState::Playing)));
     }
 }
 
@@ -46,7 +42,7 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
         };
         let facing_mul: f32 = facing.into();
 
-        commands.spawn().insert_bundle(ClimberBundle {
+        commands.spawn(ClimberBundle {
             sprite_bundle: SpriteBundle {
                 transform: Transform::from_translation(Vec3::new(24.0 * -facing_mul, 0.0, 0.0)),
                 sprite: Sprite {
@@ -89,7 +85,7 @@ fn climb(
                     {
                         let mul: f32 = enemy.facing.into();
                         velocity.linvel = Vec2::new(1.0 * mul, 9.0);
-                        return
+                        return;
                     }
                 }
             }
@@ -108,7 +104,7 @@ fn health(
             println!("enemy ded");
 
             // Spawn Explosion
-            commands.spawn().insert_bundle(ExplosionBundle {
+            commands.spawn(ExplosionBundle {
                 sprite_bundle: SpriteSheetBundle {
                     texture_atlas: texture_assets.explosion.clone(),
                     sprite: TextureAtlasSprite {
@@ -124,7 +120,7 @@ fn health(
                 collider: Collider::ball(enemy.health.abs() as f32),
                 explosion: Explosion {
                     power: enemy.health.abs(),
-                    timer: Timer::from_seconds(0.5, false),
+                    timer: Timer::from_seconds(0.5, TimerMode::Once),
                 },
                 ..Default::default()
             });

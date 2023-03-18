@@ -1,4 +1,4 @@
-use crate::enemies::{Enemy, Facing, Hop, ExplosionBundle, Explosion};
+use crate::enemies::{Enemy, Explosion, ExplosionBundle, Facing, Hop};
 use crate::loading::TextureAssets;
 use crate::{DynamicActorBundle, GameState, PhysicLayer};
 use bevy::prelude::*;
@@ -15,9 +15,7 @@ pub struct Giant;
 
 #[derive(Bundle, Default)]
 struct GiantBundle {
-    #[bundle]
     sprite_bundle: SpriteBundle,
-    #[bundle]
     dynamic_actor_bundle: DynamicActorBundle,
     locked_axes: LockedAxes,
     enemy: Enemy,
@@ -29,8 +27,7 @@ pub struct GiantPlugin;
 
 impl Plugin for GiantPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_update(GameState::Playing).with_system(spawn))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(health));
+        app.add_systems((spawn, health).in_set(OnUpdate(GameState::Playing)));
     }
 }
 
@@ -50,7 +47,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
             rand::thread_rng().gen_range(10.5..11.0),
         );
 
-        commands.spawn().insert_bundle(GiantBundle {
+        commands.spawn(GiantBundle {
             sprite_bundle: SpriteBundle {
                 transform: Transform::from_translation(Vec3::new(24.0 * -facing_mul, 6.0, 0.0)),
                 sprite: Sprite {
@@ -64,7 +61,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                 collider: Collider::cuboid(GIANT_SHAPE.x, GIANT_SHAPE.y),
                 collision_groups: CollisionGroups::new(
                     (PhysicLayer::ENEMY | PhysicLayer::GIANT).into(),
-                    (PhysicLayer::GROUND | PhysicLayer::PLAYER_PROJ).into()
+                    (PhysicLayer::GROUND | PhysicLayer::PLAYER_PROJ).into(),
                 ),
                 friction: Friction::coefficient(2.0),
                 restitution: Restitution::coefficient(0.2),
@@ -88,10 +85,10 @@ fn health(
     for (entity, enemy, trans) in query.iter() {
         if enemy.health <= 0 {
             let _ = &commands.entity(entity).despawn();
-                println!("enemy ded");
+            println!("enemy ded");
 
             // Spawn Explosion
-            commands.spawn().insert_bundle(ExplosionBundle {
+            commands.spawn(ExplosionBundle {
                 sprite_bundle: SpriteSheetBundle {
                     texture_atlas: texture_assets.explosion.clone(),
                     sprite: TextureAtlasSprite {
@@ -107,7 +104,7 @@ fn health(
                 collider: Collider::ball(enemy.health.abs() as f32),
                 explosion: Explosion {
                     power: enemy.health.abs(),
-                    timer: Timer::from_seconds(0.5, false),
+                    timer: Timer::from_seconds(0.5, TimerMode::Once),
                 },
                 ..Default::default()
             });

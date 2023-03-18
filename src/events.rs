@@ -6,8 +6,8 @@ pub struct EventsPlugin;
 impl Plugin for EventsPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<EnemySpawnsChanged>()
-            .add_system_set(SystemSet::on_enter(GameState::Menu).with_system(load))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(update));
+            .add_system(load.in_schedule(OnEnter(GameState::Menu)))
+            .add_system(update.in_set(OnUpdate(GameState::Playing)));
     }
 }
 
@@ -26,7 +26,7 @@ pub struct TimeTable {
     pub t: toml::value::Table,
 }
 
-#[derive(Default)]
+#[derive(Resource, Default)]
 struct SpawnRatesOverTime {
     table: HashMap<String, SpawnRates>,
 }

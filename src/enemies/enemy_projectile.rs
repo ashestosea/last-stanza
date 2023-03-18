@@ -1,4 +1,4 @@
-use crate::enemies::{Enemy};
+use crate::enemies::Enemy;
 use crate::loading::TextureAssets;
 use crate::player::PLAYER_CENTER;
 use crate::{DynamicActorBundle, GameState, PhysicLayer};
@@ -17,9 +17,7 @@ pub(crate) struct Projectile;
 
 #[derive(Bundle, Default)]
 struct ProjectileParentBundle {
-    #[bundle]
     spacial_bundle: SpatialBundle,
-    #[bundle]
     dynamic_actor_bundle: DynamicActorBundle,
     projectile: Projectile,
     enemy: Enemy,
@@ -27,9 +25,7 @@ struct ProjectileParentBundle {
 
 #[derive(Bundle, Default)]
 struct ProjectileChildBundle {
-    #[bundle]
     sprite: SpriteBundle,
-    #[bundle]
     dynamic_actor_bundle: DynamicActorBundle,
     sensor: Sensor,
     projectile: Projectile,
@@ -40,12 +36,9 @@ pub struct ProjectilePlugin;
 
 impl Plugin for ProjectilePlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_update(GameState::Playing).with_system(spawn))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(health))
-            .add_system_set(
-                SystemSet::on_update(GameState::Playing).with_system(projectile_destruction),
-            )
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(animate));
+        app.add_systems(
+            (spawn, health, projectile_destruction, animate).in_set(OnUpdate(GameState::Playing)),
+        );
     }
 }
 
@@ -58,7 +51,7 @@ fn spawn(
         commands.entity(entity).despawn();
 
         commands
-            .spawn_bundle(ProjectileParentBundle {
+            .spawn(ProjectileParentBundle {
                 spacial_bundle: SpatialBundle {
                     transform: Transform::from_xyz(spawn.pos.x, spawn.pos.y, 0.0),
                     ..Default::default()
@@ -79,7 +72,7 @@ fn spawn(
                 ..Default::default()
             })
             .with_children(|parent| {
-                parent.spawn_bundle(ProjectileChildBundle {
+                parent.spawn(ProjectileChildBundle {
                     sprite: SpriteBundle {
                         transform: Transform::from_translation(Vec3::ZERO),
                         texture: texture_assets.circle.clone(),
@@ -115,7 +108,7 @@ fn health(
             let _ = &commands.entity(parent.get()).despawn_recursive();
             // let ex_pos = parent_query.get(parent.get()).unwrap().translation;
             // Spawn Explosion
-            // commands.spawn().insert_bundle(ExplosionBundle {
+            // commands.spawn(ExplosionBundle {
             //     sprite_bundle: SpriteSheetBundle {
             //         texture_atlas: texture_assets.explosion.clone(),
             //         sprite: TextureAtlasSprite {

@@ -2,7 +2,7 @@ use crate::{
     enemies::{Explosion, Giant, Hop},
     GameState,
 };
-use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy::{prelude::*, render::camera::*};
 use rand::Rng;
 
 const CAM_POS: Vec3 = Vec3::new(0.0, 8.0, 0.0);
@@ -20,26 +20,26 @@ pub struct MainCameraPlugin;
 
 impl Plugin for MainCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(Timer::from_seconds(0.125, false))
-            .add_system_set(SystemSet::on_enter(GameState::Menu).with_system(setup_camera))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(camera_shake))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(explosion_trauma))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(giant_steps));
+        app.add_system(setup_camera.in_schedule(OnEnter(GameState::Menu)))
+            .add_systems(
+                (camera_shake, explosion_trauma, giant_steps).in_set(OnUpdate(GameState::Playing)),
+            );
     }
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands
-        .spawn_bundle(Camera2dBundle {
+    commands.spawn((
+        Camera2dBundle {
             transform: Transform::from_translation(CAM_POS),
             projection: OrthographicProjection {
                 scaling_mode: ScalingMode::FixedHorizontal(30.0),
                 ..Default::default()
             },
             ..Default::default()
-        })
-        .insert(MainCamera)
-        .insert(CameraTrauma::default());
+        },
+        MainCamera,
+        CameraTrauma::default(),
+    ));
 }
 
 fn explosion_trauma(
@@ -69,7 +69,7 @@ fn camera_shake(
 
     trans.translation = CAM_POS;
     trans.rotation = Quat::IDENTITY;
-    
+
     if trauma.trauma.abs() < f32::EPSILON {
         return;
     }

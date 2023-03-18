@@ -1,9 +1,10 @@
-use crate::PhysicLayer;
-use crate::enemies::Enemy;
 use crate::enemies::enemy_projectile::Projectile;
+use crate::enemies::Enemy;
 use crate::main_camera::MainCamera;
+use crate::PhysicLayer;
 use crate::{loading::TextureAssets, DynamicActorBundle, GameState};
-use bevy::{prelude::*, render::camera::RenderTarget};
+use bevy::window::PrimaryWindow;
+use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 pub const PLAYER_CENTER: Vec2 = Vec2::new(0.0, 8.0);
@@ -16,13 +17,9 @@ impl Plugin for PlayerPlugin {
             world_pos: Vec2::ZERO,
             vec_from_player: Vec2::Y,
         })
-        .add_system_set(SystemSet::on_enter(GameState::Playing).with_system(spawn_player))
-        .add_system_set(SystemSet::on_enter(GameState::Playing).with_system(spawn_projectile))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(mouse_input))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(aim))
-        .add_system_set(SystemSet::on_update(GameState::Playing).with_system(launch))
-        .add_system_set(
-            SystemSet::on_update(GameState::Playing).with_system(projectile_destruction),
+        .add_systems((spawn_player, spawn_projectile).in_schedule(OnEnter(GameState::Playing)))
+        .add_systems(
+            (mouse_input, aim, launch, projectile_destruction).in_set(OnUpdate(GameState::Playing)),
         );
     }
 }
@@ -43,7 +40,7 @@ struct Charging {
 #[derive(Component)]
 struct Fired;
 
-#[derive(Default)]
+#[derive(Resource, Default)]
 struct MouseData {
     world_pos: Vec2,
     vec_from_player: Vec2,
@@ -51,7 +48,7 @@ struct MouseData {
 
 fn spawn_player(mut commands: Commands) {
     commands
-        .spawn_bundle(SpriteBundle {
+        .spawn(SpriteBundle {
             // texture: textures.texture_bevy.clone(),
             sprite: Sprite {
                 color: Color::RED,
@@ -67,7 +64,7 @@ fn spawn_player(mut commands: Commands) {
 
 fn spawn_projectile(mut commands: Commands, texture_assets: Res<TextureAssets>) {
     commands
-        .spawn_bundle(SpriteBundle {
+        .spawn(SpriteBundle {
             texture: texture_assets.circle.clone(),
             sprite: Sprite {
                 custom_size: Some(Vec2::ONE),
@@ -78,15 +75,21 @@ fn spawn_projectile(mut commands: Commands, texture_assets: Res<TextureAssets>) 
             ..Default::default()
         })
         .insert(PlayerProjectile { size: 1 })
-        .insert_bundle(DynamicActorBundle {
+        .insert(DynamicActorBundle {
             locked_axes: LockedAxes::all(),
             collider: Collider::ball(0.5),
             collision_groups: CollisionGroups::new(
                 PhysicLayer::PLAYER_PROJ.into(),
                 (PhysicLayer::GROUND | PhysicLayer::ENEMY | PhysicLayer::ENEMY_PROJ).into(),
             ),
-            friction: Friction { coefficient: 0.0, combine_rule: CoefficientCombineRule::Min },
-            restitution: Restitution { coefficient: 1.5, combine_rule: Default::default() },
+            friction: Friction {
+                coefficient: 0.0,
+                combine_rule: CoefficientCombineRule::Min,
+            },
+            restitution: Restitution {
+                coefficient: 1.5,
+                combine_rule: Default::default(),
+            },
             ..Default::default()
         });
 }
@@ -118,7 +121,7 @@ fn launch(
 }
 
 fn mouse_input(
-    windows: Res<Windows>,
+    primary_window_query: Query<&Window, With<PrimaryWindow>>,
     input: Res<Input<MouseButton>>,
     cam_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     proj_query: Query<Entity, With<PlayerProjectile>>,
@@ -128,10 +131,8 @@ fn mouse_input(
 ) {
     let (camera, camera_transform) = cam_query.single();
 
-    let window = if let RenderTarget::Window(id) = camera.target {
-        windows.get(id).unwrap()
-    } else {
-        windows.get_primary().unwrap()
+    let Ok(window) = primary_window_query.get_single() else {
+        return;
     };
 
     for e in events.iter() {
@@ -159,7 +160,7 @@ fn mouse_input(
             .remove::<RigidBody>()
             .insert(RigidBody::Fixed)
             .insert(Charging {
-                timer: Timer::from_seconds(10.0, true),
+                timer: Timer::from_seconds(10.0, TimerMode::Repeating),
             });
     } else if input.just_released(MouseButton::Left) {
         let entity = proj_query.single();

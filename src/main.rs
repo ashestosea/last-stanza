@@ -5,15 +5,11 @@ use last_stanza::GamePlugin;
 
 fn main() {
     App::new()
-        .insert_resource(WindowDescriptor {
-            // width: 350.0,
-            // height: 265.0,
-            ..Default::default()
-        })
         .add_plugins(DefaultPlugins)
         // .add_plugin(EditorPlugin)
         // .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
         // .add_plugin(bevy::diagnostic::EntityCountDiagnosticsPlugin)
         .add_plugin(GamePlugin)
+        // .add_startup_system(spawn_window)
         .run();
 }

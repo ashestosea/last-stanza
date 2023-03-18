@@ -16,9 +16,7 @@ struct Hopper;
 
 #[derive(Bundle, Default)]
 struct HopperBundle {
-    #[bundle]
     sprite_bundle: SpriteSheetBundle,
-    #[bundle]
     dynamic_actor_bundle: DynamicActorBundle,
     enemy: Enemy,
     hopper: Hopper,
@@ -29,10 +27,7 @@ pub struct HopperPlugin;
 
 impl Plugin for HopperPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_update(GameState::Playing).with_system(spawn))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(shoot))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(health))
-            .add_system_set(SystemSet::on_update(GameState::Playing).with_system(animate));
+        app.add_systems((spawn, shoot, health, animate).in_set(OnUpdate(GameState::Playing)));
     }
 }
 
@@ -56,7 +51,7 @@ fn spawn(
             rand::thread_rng().gen_range(15.0..15.01),
         );
 
-        commands.spawn().insert_bundle(HopperBundle {
+        commands.spawn(HopperBundle {
             sprite_bundle: SpriteSheetBundle {
                 texture_atlas: texture_assets.hopper.clone(),
                 transform: Transform::from_translation(Vec3::new(24.0 * -facing_mul, 6.0, 0.0)),
@@ -90,9 +85,9 @@ fn spawn(
 fn shoot(mut commands: Commands, query: Query<&Transform, With<Hopper>>) {
     for t in query.iter() {
         if rand::thread_rng().gen_range(0.0..1.0) > 0.99 {
-            commands
-                .spawn()
-                .insert(ProjectileSpawn { pos: t.translation.truncate() });
+            commands.spawn(ProjectileSpawn {
+                pos: t.translation.truncate(),
+            });
         }
     }
 }
@@ -120,7 +115,7 @@ fn health(
             println!("enemy ded");
 
             // Spawn Explosion
-            commands.spawn().insert_bundle(ExplosionBundle {
+            commands.spawn(ExplosionBundle {
                 sprite_bundle: SpriteSheetBundle {
                     texture_atlas: texture_assets.explosion.clone(),
                     sprite: TextureAtlasSprite {
@@ -136,7 +131,7 @@ fn health(
                 collider: Collider::ball(enemy.health.abs() as f32),
                 explosion: Explosion {
                     power: enemy.health.abs(),
-                    timer: Timer::from_seconds(0.5, false),
+                    timer: Timer::from_seconds(0.5, TimerMode::Once),
                 },
                 ..Default::default()
             });
