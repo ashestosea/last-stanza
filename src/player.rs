@@ -3,8 +3,8 @@ use crate::enemies::Enemy;
 use crate::main_camera::MainCamera;
 use crate::PhysicLayer;
 use crate::{loading::TextureAssets, DynamicActorBundle, GameState};
-use bevy::window::PrimaryWindow;
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 use bevy_rapier2d::prelude::*;
 
 pub const PLAYER_CENTER: Vec2 = Vec2::new(0.0, 8.0);
@@ -17,9 +17,16 @@ impl Plugin for PlayerPlugin {
             world_pos: Vec2::ZERO,
             vec_from_player: Vec2::Y,
         })
-        .add_systems((spawn_player, spawn_projectile).in_schedule(OnEnter(GameState::Playing)))
+        .add_system(spawn_player.in_schedule(OnEnter(GameState::Playing)))
         .add_systems(
-            (mouse_input, aim, launch, projectile_destruction).in_set(OnUpdate(GameState::Playing)),
+            (
+                mouse_input,
+                aim,
+                launch,
+                projectile_destruction,
+                projectile_timeouts,
+            )
+                .in_set(OnUpdate(GameState::Playing)),
         );
     }
 }
@@ -34,6 +41,11 @@ pub(crate) struct PlayerProjectile {
 
 #[derive(Component)]
 struct Charging {
+    timer: Timer,
+}
+
+#[derive(Component)]
+struct Timeout {
     timer: Timer,
 }
 
@@ -62,8 +74,8 @@ fn spawn_player(mut commands: Commands) {
         .insert(Player);
 }
 
-fn spawn_projectile(mut commands: Commands, texture_assets: Res<TextureAssets>) {
-    commands
+fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>) -> Entity {
+    let entity = &commands
         .spawn(SpriteBundle {
             texture: texture_assets.circle.clone(),
             sprite: Sprite {
@@ -76,7 +88,8 @@ fn spawn_projectile(mut commands: Commands, texture_assets: Res<TextureAssets>) 
         })
         .insert(PlayerProjectile { size: 1 })
         .insert(DynamicActorBundle {
-            locked_axes: LockedAxes::all(),
+            rigidbody: RigidBody::Fixed,
+            locked_axes: LockedAxes::ROTATION_LOCKED,
             collider: Collider::ball(0.5),
             collision_groups: CollisionGroups::new(
                 PhysicLayer::PLAYER_PROJ.into(),
@@ -87,11 +100,21 @@ fn spawn_projectile(mut commands: Commands, texture_assets: Res<TextureAssets>) 
                 combine_rule: CoefficientCombineRule::Min,
             },
             restitution: Restitution {
-                coefficient: 1.5,
+                coefficient: 2.0,
                 combine_rule: Default::default(),
             },
+            mass: ColliderMassProperties::Mass(100.0),
             ..Default::default()
-        });
+        })
+        .insert(Timeout {
+            timer: Timer::from_seconds(30.0, TimerMode::Once),
+        })
+        .insert(Charging {
+            timer: Timer::from_seconds(10.0, TimerMode::Repeating),
+        })
+        .id();
+
+    return *entity;
 }
 
 fn aim(
@@ -114,9 +137,9 @@ fn launch(
     mut query: Query<(Entity, &mut Velocity), (With<PlayerProjectile>, With<Fired>)>,
 ) {
     for (entity, mut vel) in query.iter_mut() {
-        vel.linvel = mouse_data.vec_from_player * 12.0;
-
-        commands.entity(entity).remove::<Fired>();
+        println!("fire projectile!");
+        vel.linvel = mouse_data.vec_from_player * 24.0;
+        commands.entity(entity).remove::<Fired>().insert(Sleeping{sleeping: false, ..Default::default()});
     }
 }
 
@@ -124,7 +147,8 @@ fn mouse_input(
     primary_window_query: Query<&Window, With<PrimaryWindow>>,
     input: Res<Input<MouseButton>>,
     cam_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    proj_query: Query<Entity, With<PlayerProjectile>>,
+    proj_query: Query<Entity, (With<PlayerProjectile>, With<Charging>)>,
+    texture_assets: Res<TextureAssets>,
     mut commands: Commands,
     mut mouse_data: ResMut<MouseData>,
     mut events: EventReader<CursorMoved>,
@@ -154,36 +178,49 @@ fn mouse_input(
     mouse_data.vec_from_player = Vec2::from_angle(angle).rotate(Vec2::Y).normalize();
 
     if input.just_pressed(MouseButton::Left) {
-        let entity = proj_query.single();
-        commands
-            .entity(entity)
-            .remove::<RigidBody>()
-            .insert(RigidBody::Fixed)
-            .insert(Charging {
-                timer: Timer::from_seconds(10.0, TimerMode::Repeating),
-            });
+        spawn_projectile(&mut commands, texture_assets);
     } else if input.just_released(MouseButton::Left) {
-        let entity = proj_query.single();
-        commands
-            .entity(entity)
-            .remove::<RigidBody>()
-            .remove::<Charging>()
-            .insert(RigidBody::Dynamic)
-            .insert(Fired);
+        for p in proj_query.iter() {
+            commands
+                .entity(p)
+                .remove::<RigidBody>()
+                .remove::<Charging>()
+                .insert(RigidBody::Dynamic)
+                .insert(Fired);
+        }
+    }
+}
+
+fn projectile_explode(commands: &mut Commands, projectile_entity: Entity) {
+    commands.entity(projectile_entity).despawn();
+}
+
+fn projectile_timeouts(
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut Timeout), Without<Charging>>,
+    time: Res<Time>,
+) {
+    for (entity, mut timeout) in query.iter_mut() {
+        if timeout.timer.finished() {
+            projectile_explode(&mut commands, entity);
+        }
+        else {
+            timeout.timer.tick(time.delta());
+        }
     }
 }
 
 fn projectile_destruction(
     mut commands: Commands,
-    mut proj_query: Query<(Entity, &mut Transform, &CollidingEntities), With<PlayerProjectile>>,
+    mut proj_query: Query<(Entity, &CollidingEntities), With<PlayerProjectile>>,
     enemy_query: Query<Entity, (With<Enemy>, Without<Projectile>)>,
 ) {
-    for (proj_entity, mut proj_trans, collisions) in proj_query.iter_mut() {
-        for c in collisions.iter() {
+    for (proj_entity, colliding_entities) in proj_query.iter_mut() {
+        for e in colliding_entities.iter() {
             for enemy_entity in enemy_query.iter() {
-                if enemy_entity == c {
-                    proj_trans.translation = Vec3::NEG_Y * 50.0;
-                    commands.entity(proj_entity).remove::<RigidBody>();
+                if enemy_entity == e {
+                    projectile_explode(&mut commands, proj_entity);
+                    break;
                 }
             }
         }
