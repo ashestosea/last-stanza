@@ -47,7 +47,7 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
 
     // Ground
     let mut pos = Vec3::new(0.0, -3.0, 0.0);
-    let ground_shape = Vec2::new(50.0, 6.0);
+    let ground_shape = Vec2::new(100.0, 6.0);
 
     // Ground texture
     commands.spawn(SpriteBundle {
