@@ -74,6 +74,7 @@ fn camera_shake(
         return;
     }
 
+    trauma.trauma = trauma.trauma.clamp(0.0, 1.333);
     let shake = trauma.trauma.powf(3.0);
 
     trans.translation.x += 0.1 * shake * rand::thread_rng().gen_range(-1.0..1.0);
@@ -81,5 +82,4 @@ fn camera_shake(
     trans.rotate_z(0.005 * shake * rand::thread_rng().gen_range(-1.0..1.0));
 
     trauma.trauma -= time.delta_seconds() * 3.0;
-    trauma.trauma = trauma.trauma.clamp(0.0, 1.0);
 }
