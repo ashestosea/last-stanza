@@ -13,13 +13,13 @@ pub(crate) struct ProjectileSpawn {
 }
 
 #[derive(Component, Default)]
-pub(crate) struct Projectile;
+pub(crate) struct EnemyProjectile;
 
 #[derive(Bundle, Default)]
 struct ProjectileParentBundle {
     spacial_bundle: SpatialBundle,
     dynamic_actor_bundle: DynamicActorBundle,
-    projectile: Projectile,
+    projectile: EnemyProjectile,
     enemy: Enemy,
 }
 
@@ -28,7 +28,7 @@ struct ProjectileChildBundle {
     sprite: SpriteBundle,
     dynamic_actor_bundle: DynamicActorBundle,
     sensor: Sensor,
-    projectile: Projectile,
+    projectile: EnemyProjectile,
     enemy: Enemy,
 }
 
@@ -59,7 +59,7 @@ fn spawn(
                 dynamic_actor_bundle: DynamicActorBundle {
                     rigidbody: RigidBody::KinematicVelocityBased,
                     collider: Collider::ball(0.001),
-                    collision_groups: CollisionGroups::default(),
+                    collision_groups: CollisionGroups::new(Group::empty(), Group::empty()),
                     locked_axes: LockedAxes::ROTATION_LOCKED,
                     velocity: Velocity::linear((PLAYER_CENTER - spawn.pos).normalize()),
                     ..Default::default()
@@ -84,10 +84,14 @@ fn spawn(
                         ..Default::default()
                     },
                     dynamic_actor_bundle: DynamicActorBundle {
+                        rigidbody: RigidBody::Fixed,
                         collider: Collider::ball(0.3),
                         collision_groups: CollisionGroups::new(
                             (PhysicLayer::ENEMY | PhysicLayer::ENEMY_PROJ).into(),
-                            (PhysicLayer::PLAYER | PhysicLayer::PLAYER_PROJ).into(),
+                            (PhysicLayer::PLAYER
+                                | PhysicLayer::PLAYER_PROJ
+                                | PhysicLayer::EXPLOSION)
+                                .into(),
                         ),
                         ..Default::default()
                     },
@@ -99,7 +103,7 @@ fn spawn(
 
 fn health(
     mut commands: Commands,
-    query: Query<(&Parent, &Enemy), (With<Projectile>, Changed<Enemy>)>,
+    query: Query<(&Parent, &Enemy), (With<EnemyProjectile>, Changed<Enemy>)>,
     // parent_query: Query<&Transform>,
     // texture_assets: Res<TextureAssets>,
 ) {
@@ -135,7 +139,7 @@ fn health(
 }
 
 fn projectile_destruction(
-    query: Query<(Entity, &CollidingEntities), With<Projectile>>,
+    query: Query<(Entity, &CollidingEntities), With<EnemyProjectile>>,
     mut commands: Commands,
 ) {
     for (entity, colliding_entities) in query.iter() {

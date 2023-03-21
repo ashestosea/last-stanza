@@ -42,9 +42,10 @@ impl Plugin for GamePlugin {
             .add_plugin(PlayerPlugin)
             .add_plugin(EnemiesPlugin)
             // .add_plugin(PhysicsPlugin::default())
-            .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+            .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(72.0))
             // .add_plugin(RapierDebugRenderPlugin::default())
-            .add_system(cleanup_far_entities.in_set(OnUpdate(GameState::Playing)));
+            .add_system(cleanup_far_entities.in_set(OnUpdate(GameState::Playing)))
+            .add_startup_system(setup_rapier);
             // .insert_resource(Gravity::from(Vec2::new(0.0, -9.81)));
 
         // #[cfg(debug_assertions)]
@@ -53,6 +54,10 @@ impl Plugin for GamePlugin {
         //         .add_plugin(LogDiagnosticsPlugin::default());
         // }
     }
+}
+
+fn setup_rapier(mut rapier_config: ResMut<RapierConfiguration>) {
+    rapier_config.gravity = Vec2::Y * (-9.81 * 0.75);
 }
 
 fn cleanup_far_entities(mut commands: Commands, query: Query<(Entity, &Transform)>) {
@@ -92,7 +97,9 @@ bitflags::bitflags! {
         /// The group n°9.
         const ENEMY_PROJ = 1 << 8;
         /// The group n°10.
-        const DEBUG = 1 << 9;
+        const EXPLOSION = 1 << 9;
+        /// The group n°11.
+        const DEBUG = 1 << 10;
 
         /// All of the groups.
         const ALL = u32::MAX;
@@ -120,6 +127,7 @@ struct DynamicActorBundle {
     collider: Collider,
     collision_groups: CollisionGroups,
     colliding_entities: CollidingEntities,
+    active_events: ActiveEvents,
     friction: Friction,
     restitution: Restitution,
     mass: ColliderMassProperties,
@@ -134,9 +142,10 @@ impl Default for DynamicActorBundle {
             collider: Default::default(),
             collision_groups: Default::default(),
             colliding_entities: Default::default(),
+            active_events: ActiveEvents::COLLISION_EVENTS,
             friction: Default::default(),
             restitution: Default::default(),
-            mass: ColliderMassProperties::Density(1.0),
+            mass: ColliderMassProperties::Density(5000.0),
             velocity: Default::default(),
         }
     }

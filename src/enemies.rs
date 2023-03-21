@@ -6,6 +6,7 @@ mod hopper;
 pub use crate::enemies::giant::Giant;
 use crate::events::EnemySpawnsChanged;
 use crate::player::PlayerProjectile;
+use crate::world::Ground;
 use crate::GameState;
 use benimator::FrameRate;
 use bevy::prelude::*;
@@ -236,35 +237,42 @@ fn enemy_spawner(
     }
 }
 
-fn hop(mut query: Query<(&Enemy, &mut Velocity, &CollidingEntities, &Hop)>) {
-    for (enemy, mut vel, colliding_entities, hop) in query.iter_mut() {
+fn hop(
+    mut query: Query<(
+        &Enemy,
+        &Velocity,
+        &mut ExternalImpulse,
+        &CollidingEntities,
+        &Hop,
+    )>,
+) {
+    for (enemy, vel, mut imp, colliding_entities, hop) in query.iter_mut() {
         if hop.grounded {
-            vel.linvel = hop.power;
+            imp.impulse = hop.power;
         } else if colliding_entities.is_empty() {
             // Nudge Hopping actor if it's stalled out
             if vel.linvel.x.abs() < 0.1 && vel.linvel.y.abs() < 0.1 {
                 let mul: f32 = enemy.facing.into();
-                vel.linvel = Vec2::X * 2.0 * mul;
+                imp.impulse = Vec2::X * 2.0 * mul;
             }
         }
     }
 }
 
 fn hop_grounding(
-    mut query: Query<(Entity, &mut Hop, &CollidingEntities)>,
+    mut hop_query: Query<(Entity, &mut Hop)>,
+    ground_query: Query<Entity, With<Ground>>,
     rapier_context: Res<RapierContext>,
 ) {
-    for (hop_entity, mut hop, colliding_entities) in query.iter_mut() {
-        for coll_entity in colliding_entities.iter() {
-            if let Some(contact) = rapier_context.contact_pair(hop_entity, coll_entity) {
+    for (hop_entity, mut hop) in hop_query.iter_mut() {
+        hop.grounded = false;
+
+        for ground_entity in ground_query.iter() {
+            if let Some(contact) = rapier_context.contact_pair(hop_entity, ground_entity) {
                 for manifold in contact.manifolds() {
                     if manifold.normal() == Vec2::Y {
-                        println!("Local-space contact normal 1: {}", manifold.local_n1());
-                        println!("Local-space contact normal 2: {}", manifold.local_n2());
-                        println!("World-space contact normal: {}", manifold.normal());
-
                         hop.grounded = true;
-                        return;
+                        break;
                     }
                 }
             }

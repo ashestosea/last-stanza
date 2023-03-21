@@ -21,6 +21,7 @@ struct HopperBundle {
     enemy: Enemy,
     hopper: Hopper,
     hop: Hop,
+    external_impulse: ExternalImpulse
 }
 
 pub struct HopperPlugin;

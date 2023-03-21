@@ -12,6 +12,9 @@ impl Plugin for WorldPlugin {
     }
 }
 
+#[derive(Component)]
+pub struct Ground;
+
 #[derive(Bundle)]
 struct WorldBundle {
     transform_bundle: TransformBundle,
@@ -20,7 +23,7 @@ struct WorldBundle {
     collision_groups: CollisionGroups,
     friction: Friction,
     restitution: Restitution,
-    mass: ColliderMassProperties,
+    ground: Ground
 }
 
 impl Default for WorldBundle {
@@ -32,7 +35,7 @@ impl Default for WorldBundle {
             collision_groups: CollisionGroups::new((PhysicLayer::GROUND).into(), Group::all()),
             friction: Friction::coefficient(0.0),
             restitution: Restitution::coefficient(0.0),
-            mass: ColliderMassProperties::Density(0.0),
+            ground: Ground
         }
     }
 }

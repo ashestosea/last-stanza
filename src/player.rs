@@ -1,4 +1,4 @@
-use crate::enemies::enemy_projectile::Projectile;
+use crate::enemies::enemy_projectile::EnemyProjectile;
 use crate::enemies::Enemy;
 use crate::main_camera::MainCamera;
 use crate::PhysicLayer;
@@ -213,7 +213,7 @@ fn projectile_timeouts(
 fn projectile_destruction(
     mut commands: Commands,
     mut proj_query: Query<(Entity, &CollidingEntities), With<PlayerProjectile>>,
-    enemy_query: Query<Entity, (With<Enemy>, Without<Projectile>)>,
+    enemy_query: Query<Entity, (With<Enemy>, Without<EnemyProjectile>)>,
 ) {
     for (proj_entity, colliding_entities) in proj_query.iter_mut() {
         for e in colliding_entities.iter() {
