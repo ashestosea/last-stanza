@@ -25,7 +25,7 @@ rand = "*"
 toml = "*"
 # directories = "*"
 bevy_asset_loader = { version = "0.15.0", features = ["2d"] }
-bevy_common_assets = { version = "0.5.0", features = ["toml"] }
+bevy_common_assets = { version = "0.6.0", features = ["toml"] }
 benimator = "*"
 # hot-lib-reloader = "*"
 
