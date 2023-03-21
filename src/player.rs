@@ -112,6 +112,7 @@ fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>)
         .insert(Charging {
             timer: Timer::from_seconds(10.0, TimerMode::Repeating),
         })
+        .insert(GravityScale {0: 3.0})
         .id();
 
     return *entity;
@@ -134,10 +135,10 @@ fn aim(
 fn launch(
     mut commands: Commands,
     mouse_data: Res<MouseData>,
-    mut query: Query<(Entity, &mut Velocity), (With<PlayerProjectile>, With<Fired>)>,
+    mut query: Query<(Entity, &mut Velocity, &PlayerProjectile), With<Fired>>,
 ) {
-    for (entity, mut vel) in query.iter_mut() {
-        vel.linvel = mouse_data.vec_from_player * 24.0;
+    for (entity, mut vel, projectile) in query.iter_mut() {
+        vel.linvel = mouse_data.vec_from_player * (((projectile.size as f32 - 1.0).atan() * 12.0) + 7.0);
         commands.entity(entity).remove::<Fired>().insert(Sleeping{sleeping: false, ..Default::default()});
     }
 }
