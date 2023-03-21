@@ -54,7 +54,7 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
             },
             dynamic_actor_bundle: DynamicActorBundle {
                 rigidbody: RigidBody::Dynamic,
-                collider: Collider::cuboid(CLIMBER_SHAPE.x, CLIMBER_SHAPE.y),
+                collider: Collider::cuboid(CLIMBER_SHAPE.x / 2.0, CLIMBER_SHAPE.y / 2.0),
                 collision_groups: CollisionGroups::new(
                     (PhysicLayer::ENEMY | PhysicLayer::CLIMBER).into(),
                     (PhysicLayer::GROUND
