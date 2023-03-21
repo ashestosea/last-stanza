@@ -1,5 +1,6 @@
 use crate::enemies::{Enemy, Explosion, ExplosionBundle, Facing, Hop};
 use crate::loading::TextureAssets;
+use crate::player::PlayerProjectile;
 use crate::{DynamicActorBundle, GameState, PhysicLayer};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
@@ -17,17 +18,17 @@ pub struct Giant;
 struct GiantBundle {
     sprite_bundle: SpriteBundle,
     dynamic_actor_bundle: DynamicActorBundle,
-    locked_axes: LockedAxes,
     enemy: Enemy,
     giant: Giant,
     hop: Hop,
+    external_impulse: ExternalImpulse
 }
 
 pub struct GiantPlugin;
 
 impl Plugin for GiantPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems((spawn, health).in_set(OnUpdate(GameState::Playing)));
+        app.add_systems((spawn, hit, health).in_set(OnUpdate(GameState::Playing)));
     }
 }
 
@@ -43,8 +44,8 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
         let facing_mul: f32 = facing.into();
 
         let power = Vec2::new(
-            rand::thread_rng().gen_range(0.5..0.51) * facing_mul,
-            rand::thread_rng().gen_range(10.5..11.0),
+            rand::thread_rng().gen_range(2.0..3.5) * facing_mul,
+            rand::thread_rng().gen_range(50.5..55.0),
         );
 
         commands.spawn(GiantBundle {
@@ -58,7 +59,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
-                collider: Collider::cuboid(GIANT_SHAPE.x, GIANT_SHAPE.y),
+                collider: Collider::cuboid(GIANT_SHAPE.x / 2.0, GIANT_SHAPE.y / 2.0),
                 collision_groups: CollisionGroups::new(
                     (PhysicLayer::ENEMY | PhysicLayer::GIANT).into(),
                     (PhysicLayer::GROUND | PhysicLayer::PLAYER_PROJ).into(),
@@ -77,6 +78,21 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
     }
 }
 
+fn hit(
+    proj_query: Query<(Entity, &PlayerProjectile)>,
+    mut query: Query<(&mut ExternalImpulse, &Enemy, &CollidingEntities), With<Giant>>,
+) {
+    for (mut imp, enemy, colliding_entities) in query.iter_mut() {
+        for coll_entity in colliding_entities.iter() {
+            for (proj_entity, projectile) in proj_query.iter() {
+                if coll_entity == proj_entity {
+                    imp.impulse = Vec2::X * -f32::from(enemy.facing) * (projectile.size as f32) * 5.0;
+                }
+            }
+        }
+    }
+}
+
 fn health(
     mut commands: Commands,
     query: Query<(Entity, &Enemy, &Transform), (With<Giant>, Changed<Enemy>)>,
@@ -85,7 +101,6 @@ fn health(
     for (entity, enemy, trans) in query.iter() {
         if enemy.health <= 0 {
             let _ = &commands.entity(entity).despawn();
-            println!("enemy ded");
 
             // Spawn Explosion
             commands.spawn(ExplosionBundle {
