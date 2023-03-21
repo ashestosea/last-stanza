@@ -20,7 +20,7 @@ struct ClimberBundle {
     sprite_bundle: SpriteBundle,
     dynamic_actor_bundle: DynamicActorBundle,
     enemy: Enemy,
-    clibmer: Climber,
+    climber: Climber,
 }
 
 pub struct ClimberPlugin;
@@ -69,7 +69,7 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
                 ..Default::default()
             },
             enemy: Enemy { health: 1, facing },
-            clibmer: Climber,
+            climber: Climber,
         });
     }
 }
