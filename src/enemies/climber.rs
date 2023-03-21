@@ -57,7 +57,10 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
                 collider: Collider::cuboid(CLIMBER_SHAPE.x, CLIMBER_SHAPE.y),
                 collision_groups: CollisionGroups::new(
                     (PhysicLayer::ENEMY | PhysicLayer::CLIMBER).into(),
-                    (PhysicLayer::GROUND | PhysicLayer::CLIFF_EDGE | PhysicLayer::PLAYER_PROJ)
+                    (PhysicLayer::GROUND
+                        | PhysicLayer::CLIFF_EDGE
+                        | PhysicLayer::PLAYER_PROJ
+                        | PhysicLayer::EXPLOSION)
                         .into(),
                 ),
                 friction: Friction::coefficient(0.0),

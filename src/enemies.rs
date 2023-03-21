@@ -7,7 +7,7 @@ pub use crate::enemies::giant::Giant;
 use crate::events::EnemySpawnsChanged;
 use crate::player::PlayerProjectile;
 use crate::world::Ground;
-use crate::GameState;
+use crate::{GameState, PhysicLayer};
 use benimator::FrameRate;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
@@ -66,8 +66,8 @@ struct ExplosionBundle {
     sprite_bundle: SpriteSheetBundle,
     rigidbody: RigidBody,
     collider: Collider,
+    collision_groups: CollisionGroups,
     sensor: Sensor,
-    // collision_collision_groups: CollisionGroups,
     animation: ExplosionAnimation,
     animation_state: ExplosionAnimationState,
     explosion: Explosion,
@@ -79,7 +79,10 @@ impl Default for ExplosionBundle {
             sprite_bundle: Default::default(),
             rigidbody: RigidBody::KinematicVelocityBased,
             collider: Default::default(),
-            // collision_collision_groups: CollisionGroups::new(physics_layers::PLAYER_PROJ, physics_layers::ENEMY),
+            collision_groups: CollisionGroups::new(
+                PhysicLayer::EXPLOSION.into(),
+                PhysicLayer::ENEMY.into(),
+            ),
             sensor: Sensor::default(),
             animation: ExplosionAnimation(benimator::Animation::from_indices(
                 0..=8,

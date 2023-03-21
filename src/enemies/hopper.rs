@@ -21,7 +21,7 @@ struct HopperBundle {
     enemy: Enemy,
     hopper: Hopper,
     hop: Hop,
-    external_impulse: ExternalImpulse
+    external_impulse: ExternalImpulse,
 }
 
 pub struct HopperPlugin;
@@ -67,7 +67,11 @@ fn spawn(
                 collider: Collider::cuboid(HOPPER_SHAPE.x / 2.0, HOPPER_SHAPE.y / 2.0),
                 collision_groups: CollisionGroups::new(
                     (PhysicLayer::ENEMY | PhysicLayer::HOPPER).into(),
-                    (PhysicLayer::GROUND | PhysicLayer::HOPPER | PhysicLayer::PLAYER_PROJ).into(),
+                    (PhysicLayer::GROUND
+                        | PhysicLayer::HOPPER
+                        | PhysicLayer::PLAYER_PROJ
+                        | PhysicLayer::EXPLOSION)
+                        .into(),
                 ),
                 friction: Friction::coefficient(2.0),
                 restitution: Restitution::coefficient(0.2),

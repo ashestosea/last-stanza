@@ -21,7 +21,7 @@ struct GiantBundle {
     enemy: Enemy,
     giant: Giant,
     hop: Hop,
-    external_impulse: ExternalImpulse
+    external_impulse: ExternalImpulse,
 }
 
 pub struct GiantPlugin;
@@ -62,7 +62,8 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                 collider: Collider::cuboid(GIANT_SHAPE.x / 2.0, GIANT_SHAPE.y / 2.0),
                 collision_groups: CollisionGroups::new(
                     (PhysicLayer::ENEMY | PhysicLayer::GIANT).into(),
-                    (PhysicLayer::GROUND | PhysicLayer::PLAYER_PROJ).into(),
+                    (PhysicLayer::GROUND | PhysicLayer::PLAYER_PROJ | PhysicLayer::EXPLOSION)
+                        .into(),
                 ),
                 friction: Friction::coefficient(2.0),
                 restitution: Restitution::coefficient(0.2),
@@ -86,7 +87,8 @@ fn hit(
         for coll_entity in colliding_entities.iter() {
             for (proj_entity, projectile) in proj_query.iter() {
                 if coll_entity == proj_entity {
-                    imp.impulse = Vec2::X * -f32::from(enemy.facing) * (projectile.size as f32) * 5.0;
+                    imp.impulse =
+                        Vec2::X * -f32::from(enemy.facing) * (projectile.size as f32) * 5.0;
                 }
             }
         }
