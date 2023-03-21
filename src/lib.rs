@@ -41,7 +41,6 @@ impl Plugin for GamePlugin {
             .add_plugin(WorldPlugin)
             .add_plugin(PlayerPlugin)
             .add_plugin(EnemiesPlugin)
-            // .add_plugin(PhysicsPlugin::default())
             .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(72.0))
             // .add_plugin(RapierDebugRenderPlugin::default())
             .add_system(cleanup_far_entities.in_set(OnUpdate(GameState::Playing)))

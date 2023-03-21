@@ -113,7 +113,6 @@ fn health(
     for (entity, enemy, trans) in query.iter() {
         if enemy.health <= 0 {
             let _ = &commands.entity(entity).despawn();
-            println!("enemy ded");
 
             // Spawn Explosion
             commands.spawn(ExplosionBundle {

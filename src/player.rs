@@ -137,7 +137,6 @@ fn launch(
     mut query: Query<(Entity, &mut Velocity), (With<PlayerProjectile>, With<Fired>)>,
 ) {
     for (entity, mut vel) in query.iter_mut() {
-        println!("fire projectile!");
         vel.linvel = mouse_data.vec_from_player * 24.0;
         commands.entity(entity).remove::<Fired>().insert(Sleeping{sleeping: false, ..Default::default()});
     }

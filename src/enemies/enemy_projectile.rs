@@ -144,7 +144,6 @@ fn projectile_destruction(
 ) {
     for (entity, colliding_entities) in query.iter() {
         if !colliding_entities.is_empty() {
-            println!("enemy proj collision");
             commands.entity(entity).despawn();
         }
     }
