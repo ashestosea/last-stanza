@@ -14,7 +14,7 @@ impl Plugin for EventsPlugin {
 pub struct EnemySpawnsChanged {
     pub hopper: Option<f32>,
     pub climber: Option<f32>,
-    pub sneaker: Option<f32>,
+    pub lurker: Option<f32>,
     pub diver: Option<f32>,
     pub giant: Option<f32>,
     pub behemoth: Option<f32>,
@@ -57,8 +57,8 @@ impl From<&toml::Value> for SpawnRates {
         if let Some(val) = value.get("climber") {
             result.climber = Some(val.as_float().unwrap() as f32);
         }
-        if let Some(val) = value.get("sneaker") {
-            result.sneaker = Some(val.as_float().unwrap() as f32);
+        if let Some(val) = value.get("lurker") {
+            result.lurker = Some(val.as_float().unwrap() as f32);
         }
         if let Some(val) = value.get("diver") {
             result.diver = Some(val.as_float().unwrap() as f32);
@@ -99,7 +99,7 @@ fn update(
             ev_writer.send(EnemySpawnsChanged {
                 hopper: entry.1.hopper,
                 climber: entry.1.climber,
-                sneaker: entry.1.sneaker,
+                lurker: entry.1.lurker,
                 diver: entry.1.diver,
                 giant: entry.1.giant,
                 behemoth: entry.1.behemoth,

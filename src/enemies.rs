@@ -103,7 +103,7 @@ struct ExplosionAnimation(benimator::Animation);
 struct ExplosionAnimationState(benimator::State);
 
 #[derive(Component)]
-struct Sneaker;
+struct Lurker;
 
 #[derive(Component)]
 struct Diver;
@@ -126,7 +126,7 @@ struct SpawnTimer {
 pub struct SpawnRates {
     pub hopper: Option<f32>,
     pub climber: Option<f32>,
-    pub sneaker: Option<f32>,
+    pub lurker: Option<f32>,
     pub diver: Option<f32>,
     pub giant: Option<f32>,
     pub behemoth: Option<f32>,
@@ -136,7 +136,7 @@ impl SpawnRates {
     fn none(&self) -> f32 {
         1.0 - self.hopper.unwrap_or_default()
             - self.climber.unwrap_or_default()
-            - self.sneaker.unwrap_or_default()
+            - self.lurker.unwrap_or_default()
             - self.diver.unwrap_or_default()
             - self.giant.unwrap_or_default()
             - self.behemoth.unwrap_or_default()
@@ -181,8 +181,8 @@ fn update_enemy_spawns(
         if let Some(val) = e.climber {
             spawn_rates.climber = Some(val);
         }
-        if let Some(val) = e.sneaker {
-            spawn_rates.sneaker = Some(val);
+        if let Some(val) = e.lurker {
+            spawn_rates.lurker = Some(val);
         }
         if let Some(val) = e.diver {
             spawn_rates.diver = Some(val);
