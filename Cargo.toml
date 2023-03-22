@@ -27,7 +27,7 @@ toml = "*"
 # spew = "*"
 bevy_asset_loader = { version = "0.15.0", features = ["2d"] }
 bevy_common_assets = { version = "0.6.0", features = ["toml"] }
-bevy_tweening = "*"
+# bevy_tweening = "*"
 benimator = "*"
 # hot-lib-reloader = "*"
 
