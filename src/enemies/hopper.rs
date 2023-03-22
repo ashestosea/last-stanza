@@ -90,7 +90,7 @@ fn spawn(
 fn shoot(mut commands: Commands, query: Query<&Transform, With<Hopper>>) {
     for t in query.iter() {
         if rand::thread_rng().gen_range(0.0..1.0) > 0.999 &&
-            t.translation.x.abs() < 20.0 {
+            t.translation.x.abs() < 15.0 {
             commands.spawn(ProjectileSpawn {
                 pos: t.translation.truncate(),
             });
