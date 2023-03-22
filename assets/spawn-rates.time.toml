@@ -12,3 +12,6 @@ climber = 0.1
 
 [t.20]
 giant = 0.05
+
+[t.40]
+lurker = 0.1

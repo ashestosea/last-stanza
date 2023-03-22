@@ -2,6 +2,7 @@ mod climber;
 pub(crate) mod enemy_projectile;
 mod giant;
 mod hopper;
+mod lurker;
 
 pub use crate::enemies::giant::Giant;
 use crate::events::EnemySpawnsChanged;
@@ -17,6 +18,7 @@ use self::climber::{ClimberPlugin, ClimberSpawn};
 use self::enemy_projectile::ProjectilePlugin;
 use self::giant::{GiantPlugin, GiantSpawn};
 use self::hopper::{HopperPlugin, HopperSpawn};
+use self::lurker::{LurkerPlugin, LurkerSpawn};
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Facing {
@@ -165,6 +167,7 @@ impl Plugin for EnemiesPlugin {
         })
         .add_plugin(HopperPlugin)
         .add_plugin(ClimberPlugin)
+        .add_plugin(LurkerPlugin)
         .add_plugin(GiantPlugin)
         .add_plugin(ProjectilePlugin);
     }
@@ -228,6 +231,13 @@ fn enemy_spawner(
     total_chance += spawn_chances.climber.unwrap_or_default();
     if rng < total_chance {
         commands.spawn(ClimberSpawn);
+        return;
+    }
+
+    // Lurker
+    total_chance += spawn_chances.lurker.unwrap_or_default();
+    if rng < total_chance {
+        commands.spawn(LurkerSpawn);
         return;
     }
 

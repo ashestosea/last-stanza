@@ -77,28 +77,20 @@ bitflags::bitflags! {
     #[reflect(Component, Hash, PartialEq)]
     #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
     pub struct PhysicLayer: u32 {
-        /// The group n°1.
         const GROUND = 1 << 0;
-        /// The group n°2.
         const CLIFF_EDGE = 1 << 1;
-        /// The group n°3.
         const PLAYER = 1 << 2;
-        /// The group n°4.
         const ENEMY = 1 << 3;
-        /// The group n°5.
         const HOPPER = 1 << 4;
-        /// The group n°6.
         const CLIMBER = 1 << 5;
-        /// The group n°7.
-        const GIANT = 1 << 6;
-        /// The group n°8.
-        const PLAYER_PROJ = 1 << 7;
-        /// The group n°9.
-        const ENEMY_PROJ = 1 << 8;
-        /// The group n°10.
-        const EXPLOSION = 1 << 9;
-        /// The group n°11.
-        const DEBUG = 1 << 10;
+        const LURKER = 1 << 6;
+        const DIVER = 1 << 7;
+        const GIANT = 1 << 8;
+        const BEHEMOTH = 1 << 9;
+        const PLAYER_PROJ = 1 << 10;
+        const ENEMY_PROJ = 1 << 11;
+        const EXPLOSION = 1 << 12;
+        const DEBUG = 1 << 13;
 
         /// All of the groups.
         const ALL = u32::MAX;
