@@ -88,7 +88,7 @@ fn hit(
             for (proj_entity, projectile) in proj_query.iter() {
                 if coll_entity == proj_entity {
                     imp.impulse =
-                        Vec2::X * -f32::from(enemy.facing) * (projectile.size as f32) * 5.0;
+                        Vec2::X * -f32::from(enemy.facing) * (projectile.size as f32) * 7.5;
                 }
             }
         }
