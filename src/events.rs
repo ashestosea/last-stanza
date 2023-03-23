@@ -12,6 +12,8 @@ impl Plugin for EventsPlugin {
 }
 
 pub struct EnemySpawnsChanged {
+    pub min_spawn_time: Option<f32>,
+    pub max_spawn_time: Option<f32>,
     pub hopper: Option<f32>,
     pub climber: Option<f32>,
     pub lurker: Option<f32>,
@@ -51,24 +53,39 @@ impl From<TimeTable> for SpawnRatesOverTime {
 impl From<&toml::Value> for SpawnRates {
     fn from(value: &toml::Value) -> Self {
         let mut result = SpawnRates::default();
+        if let Some(val) = value.get("min_spawn_time") {
+            result.min_spawn_time = Some(val.as_float().unwrap() as f32);
+        }
+        if let Some(val) = value.get("max_spawn_time") {
+            result.max_spawn_time = Some(val.as_float().unwrap() as f32);
+        }
         if let Some(val) = value.get("hopper") {
-            result.hopper = Some(val.as_float().unwrap() as f32);
+            result.hopper = Some(val.as_integer().unwrap() as f32);
         }
         if let Some(val) = value.get("climber") {
-            result.climber = Some(val.as_float().unwrap() as f32);
+            result.climber = Some(val.as_integer().unwrap() as f32);
         }
         if let Some(val) = value.get("lurker") {
-            result.lurker = Some(val.as_float().unwrap() as f32);
+            result.lurker = Some(val.as_integer().unwrap() as f32);
         }
         if let Some(val) = value.get("diver") {
-            result.diver = Some(val.as_float().unwrap() as f32);
+            result.diver = Some(val.as_integer().unwrap() as f32);
         }
         if let Some(val) = value.get("giant") {
-            result.giant = Some(val.as_float().unwrap() as f32);
+            result.giant = Some(val.as_integer().unwrap() as f32);
         }
         if let Some(val) = value.get("behemoth") {
-            result.behemoth = Some(val.as_float().unwrap() as f32);
+            result.behemoth = Some(val.as_integer().unwrap() as f32);
         }
+        
+        let total_chance = result.all();
+        
+        result.hopper = Some(result.hopper.unwrap() / total_chance);
+        result.climber = Some(result.climber.unwrap() / total_chance);
+        result.lurker = Some(result.lurker.unwrap() / total_chance);
+        result.diver = Some(result.diver.unwrap() / total_chance);
+        result.giant = Some(result.giant.unwrap() / total_chance);
+        result.behemoth = Some(result.behemoth.unwrap() / total_chance);
 
         result
     }
@@ -97,6 +114,8 @@ fn update(
         if current_time.elapsed().as_secs() == entry.0.parse::<u64>().unwrap() {
             remove_key = entry.0;
             ev_writer.send(EnemySpawnsChanged {
+                min_spawn_time: entry.1.min_spawn_time,
+                max_spawn_time: entry.1.max_spawn_time,
                 hopper: entry.1.hopper,
                 climber: entry.1.climber,
                 lurker: entry.1.lurker,

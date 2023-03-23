@@ -4,6 +4,8 @@ mod giant;
 mod hopper;
 mod lurker;
 
+use std::time::Duration;
+
 pub use crate::enemies::giant::Giant;
 use crate::events::EnemySpawnsChanged;
 use crate::player::PlayerProjectile;
@@ -126,6 +128,8 @@ struct SpawnTimer {
 
 #[derive(Resource, serde::Deserialize, Clone, Default)]
 pub struct SpawnRates {
+    pub min_spawn_time: Option<f32>,
+    pub max_spawn_time: Option<f32>,
     pub hopper: Option<f32>,
     pub climber: Option<f32>,
     pub lurker: Option<f32>,
@@ -135,13 +139,13 @@ pub struct SpawnRates {
 }
 
 impl SpawnRates {
-    fn none(&self) -> f32 {
-        1.0 - self.hopper.unwrap_or_default()
-            - self.climber.unwrap_or_default()
-            - self.lurker.unwrap_or_default()
-            - self.diver.unwrap_or_default()
-            - self.giant.unwrap_or_default()
-            - self.behemoth.unwrap_or_default()
+    pub fn all(&self) -> f32 {
+        self.hopper.unwrap_or_default()
+            + self.climber.unwrap_or_default()
+            + self.lurker.unwrap_or_default()
+            + self.diver.unwrap_or_default()
+            + self.giant.unwrap_or_default()
+            + self.behemoth.unwrap_or_default()
     }
 }
 
@@ -178,30 +182,36 @@ fn update_enemy_spawns(
     mut spawn_rates: ResMut<SpawnRates>,
 ) {
     for e in spawn_change_ev.iter() {
+        if let Some(val) = e.min_spawn_time {
+            spawn_rates.min_spawn_time = Some(val as f32);
+        }
+        if let Some(val) = e.max_spawn_time {
+            spawn_rates.max_spawn_time = Some(val as f32);
+        }
         if let Some(val) = e.hopper {
-            spawn_rates.hopper = Some(val);
+            spawn_rates.hopper = Some(val as f32);
         }
         if let Some(val) = e.climber {
-            spawn_rates.climber = Some(val);
+            spawn_rates.climber = Some(val as f32);
         }
         if let Some(val) = e.lurker {
-            spawn_rates.lurker = Some(val);
+            spawn_rates.lurker = Some(val as f32);
         }
         if let Some(val) = e.diver {
-            spawn_rates.diver = Some(val);
+            spawn_rates.diver = Some(val as f32);
         }
         if let Some(val) = e.giant {
-            spawn_rates.giant = Some(val);
+            spawn_rates.giant = Some(val as f32);
         }
         if let Some(val) = e.behemoth {
-            spawn_rates.behemoth = Some(val);
+            spawn_rates.behemoth = Some(val as f32);
         }
     }
 }
 
 fn enemy_spawner(
     time: Res<Time>,
-    spawn_chances: Res<SpawnRates>,
+    spawn_rates: Res<SpawnRates>,
     mut commands: Commands,
     mut spawn_timer: ResMut<SpawnTimer>,
 ) {
@@ -211,43 +221,41 @@ fn enemy_spawner(
         return;
     }
 
-    let rng = rand::thread_rng().gen_range(0f32..1f32);
-    let mut total_chance = spawn_chances.none();
+    let min_spawn_time = spawn_rates.min_spawn_time.unwrap_or_default();
+    let max_spawn_time = spawn_rates.max_spawn_time.unwrap_or_default();
+    let dur = rand::thread_rng().gen_range(min_spawn_time..max_spawn_time);
+    spawn_timer.timer.set_duration(Duration::from_secs_f32(dur));
 
-    // Nothing
-    if rng < total_chance {
-        return;
-    }
+    let mut rng = rand::thread_rng().gen_range(0f32..1f32);
 
     // Hopper
-    total_chance += spawn_chances.hopper.unwrap_or_default();
-    if rng < total_chance {
+    if rng <= spawn_rates.hopper.unwrap_or_default() {
         // Hopper::spawn(commands, facing, start_x);
         commands.spawn(HopperSpawn);
         return;
     }
+    rng -= spawn_rates.hopper.unwrap_or_default();
 
     // Climber
-    total_chance += spawn_chances.climber.unwrap_or_default();
-    if rng < total_chance {
+    if rng <= spawn_rates.climber.unwrap_or_default() {
         commands.spawn(ClimberSpawn);
         return;
     }
+    rng -= spawn_rates.climber.unwrap_or_default();
 
     // Lurker
-    total_chance += spawn_chances.lurker.unwrap_or_default();
-    if rng < total_chance {
+    if rng <= spawn_rates.lurker.unwrap_or_default() {
         commands.spawn(LurkerSpawn);
         return;
     }
+    rng -= spawn_rates.lurker.unwrap_or_default();
 
     // Giant
-    total_chance += spawn_chances.giant.unwrap_or_default();
-    if rng < total_chance {
+    if rng <= spawn_rates.giant.unwrap_or_default() {
         commands.spawn(GiantSpawn);
-        #[allow(clippy::needless_return)]
-        return;
+        // return;
     }
+    // rng -= spawn_chances.giant.unwrap_or_default();
 }
 
 fn hop(

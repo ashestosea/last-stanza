@@ -1,17 +1,39 @@
 [t.0]
-hopper = 0.4
-climber = 0.0
-lurker = 0.0
-diver = 0.0
-giant = 0.0
-behemoth = 0.0
+min_spawn_time = 1.0
+max_spawn_time = 5.0
+hopper = 1
+climber = 0
+lurker = 0
+diver = 0
+giant = 1
+behemoth = 0
 
 [t.5]
-hopper = 0.3
-climber = 0.1
+min_spawn_time = 1.0
+max_spawn_time = 5.0
+hopper = 3
+climber = 1
+lurker = 0
+diver = 0
+giant = 0
+behemoth = 0
 
 [t.20]
-giant = 0.05
+min_spawn_time = 1.0
+max_spawn_time = 5.0
+hopper = 5
+climber = 2
+lurker = 0
+diver = 0
+giant = 1
+behemoth = 0
 
 [t.40]
-lurker = 0.1
+min_spawn_time = 1.0
+max_spawn_time = 3.5
+hopper = 5
+climber = 2
+lurker = 1
+diver = 0
+giant = 1
+behemoth = 0
