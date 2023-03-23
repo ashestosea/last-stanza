@@ -107,7 +107,7 @@ fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>)
             ..Default::default()
         })
         .insert(Timeout {
-            timer: Timer::from_seconds(30.0, TimerMode::Once),
+            timer: Timer::from_seconds(3.0, TimerMode::Once),
         })
         .insert(Charging {
             timer: Timer::from_seconds(10.0, TimerMode::Repeating),
