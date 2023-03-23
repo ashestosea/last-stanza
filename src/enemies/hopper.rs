@@ -51,11 +51,13 @@ fn spawn(
             rand::thread_rng().gen_range(1.0..2.0) * facing_mul,
             rand::thread_rng().gen_range(15.0..15.01),
         );
+        
+        let height = rand::thread_rng().gen_range(5f32..10f32);
 
         commands.spawn(HopperBundle {
             sprite_bundle: SpriteSheetBundle {
                 texture_atlas: texture_assets.hopper.clone(),
-                transform: Transform::from_translation(Vec3::new(24.0 * -facing_mul, 6.0, 0.0)),
+                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, height, 0.0)),
                 sprite: TextureAtlasSprite {
                     flip_x: facing.into(),
                     custom_size: Some(HOPPER_SHAPE),

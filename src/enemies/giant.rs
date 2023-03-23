@@ -50,7 +50,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
 
         commands.spawn(GiantBundle {
             sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(24.0 * -facing_mul, 6.0, 0.0)),
+                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 6.0, 0.0)),
                 sprite: Sprite {
                     color: Color::BLUE,
                     custom_size: Some(GIANT_SHAPE),

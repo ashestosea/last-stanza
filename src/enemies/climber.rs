@@ -44,7 +44,7 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
 
         commands.spawn(ClimberBundle {
             sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(24.0 * -facing_mul, 0.0, 0.0)),
+                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 0.0, 0.0)),
                 sprite: Sprite {
                     color: Color::MIDNIGHT_BLUE,
                     custom_size: Some(CLIMBER_SHAPE),
