@@ -23,7 +23,7 @@ struct WorldBundle {
     collision_groups: CollisionGroups,
     friction: Friction,
     restitution: Restitution,
-    ground: Ground
+    ground: Ground,
 }
 
 impl Default for WorldBundle {
@@ -35,7 +35,7 @@ impl Default for WorldBundle {
             collision_groups: CollisionGroups::new((PhysicLayer::GROUND).into(), Group::all()),
             friction: Friction::coefficient(0.0),
             restitution: Restitution::coefficient(0.0),
-            ground: Ground
+            ground: Ground,
         }
     }
 }

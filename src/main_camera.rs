@@ -20,10 +20,9 @@ pub struct MainCameraPlugin;
 
 impl Plugin for MainCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(setup_camera.in_schedule(OnEnter(GameState::Menu)))
-            .add_systems(
-                (camera_shake, explosion_trauma, giant_steps).in_set(OnUpdate(GameState::Playing)),
-            );
+        app.add_startup_system(setup_camera).add_systems(
+            (camera_shake, explosion_trauma, giant_steps).in_set(OnUpdate(GameState::Playing)),
+        );
     }
 }
 

@@ -77,9 +77,9 @@ impl From<&toml::Value> for SpawnRates {
         if let Some(val) = value.get("behemoth") {
             result.behemoth = Some(val.as_integer().unwrap() as f32);
         }
-        
+
         let total_chance = result.all();
-        
+
         result.hopper = Some(result.hopper.unwrap() / total_chance);
         result.climber = Some(result.climber.unwrap() / total_chance);
         result.lurker = Some(result.lurker.unwrap() / total_chance);
@@ -125,7 +125,7 @@ fn update(
             });
         }
     }
-    
+
     if spawn_rates_over_time.table.contains_key(remove_key) {
         spawn_rates_over_time.table.remove(remove_key);
     }

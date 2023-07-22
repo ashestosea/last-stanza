@@ -51,7 +51,7 @@ fn spawn(
             rand::thread_rng().gen_range(1.0..2.0) * facing_mul,
             rand::thread_rng().gen_range(15.0..15.01),
         );
-        
+
         let height = rand::thread_rng().gen_range(5f32..10f32);
 
         commands.spawn(HopperBundle {
@@ -71,6 +71,7 @@ fn spawn(
                     (PhysicLayer::ENEMY | PhysicLayer::HOPPER).into(),
                     (PhysicLayer::GROUND
                         | PhysicLayer::HOPPER
+                        | PhysicLayer::PLAYER
                         | PhysicLayer::PLAYER_PROJ
                         | PhysicLayer::EXPLOSION)
                         .into(),
@@ -91,8 +92,7 @@ fn spawn(
 
 fn shoot(mut commands: Commands, query: Query<&Transform, With<Hopper>>) {
     for t in query.iter() {
-        if rand::thread_rng().gen_range(0.0..1.0) > 0.999 &&
-            t.translation.x.abs() < 15.0 {
+        if rand::thread_rng().gen_range(0.0..1.0) > 0.999 && t.translation.x.abs() < 15.0 {
             commands.spawn(ProjectileSpawn {
                 pos: t.translation.truncate(),
             });

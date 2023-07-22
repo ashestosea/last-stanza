@@ -52,33 +52,32 @@ fn spawn(
                 Velocity::linear((PLAYER_CENTER - spawn.pos).normalize()),
             ))
             .with_children(|parent| {
-                parent
-                    .spawn(ProjectileChildBundle {
-                        sprite: SpriteBundle {
-                            transform: Transform::from_translation(Vec3::ZERO),
-                            texture: texture_assets.circle.clone(),
-                            sprite: Sprite {
-                                color: Color::PINK,
-                                custom_size: Some(PROJECTILE_SHAPE),
-                                ..Default::default()
-                            },
+                parent.spawn(ProjectileChildBundle {
+                    sprite: SpriteBundle {
+                        transform: Transform::from_translation(Vec3::ZERO),
+                        texture: texture_assets.circle.clone(),
+                        sprite: Sprite {
+                            color: Color::PINK,
+                            custom_size: Some(PROJECTILE_SHAPE),
                             ..Default::default()
                         },
-                        dynamic_actor_bundle: DynamicActorBundle {
-                            rigidbody: RigidBody::Fixed,
-                            collider: Collider::ball(0.3),
-                            collision_groups: CollisionGroups::new(
-                                (PhysicLayer::ENEMY | PhysicLayer::ENEMY_PROJ).into(),
-                                (PhysicLayer::PLAYER
-                                    | PhysicLayer::PLAYER_PROJ
-                                    | PhysicLayer::EXPLOSION)
-                                    .into(),
-                            ),
-                            ..Default::default()
-                        },
-                        active_collision_types: ActiveCollisionTypes::KINEMATIC_STATIC,
                         ..Default::default()
-                    });
+                    },
+                    dynamic_actor_bundle: DynamicActorBundle {
+                        rigidbody: RigidBody::Fixed,
+                        collider: Collider::ball(0.3),
+                        collision_groups: CollisionGroups::new(
+                            (PhysicLayer::ENEMY | PhysicLayer::ENEMY_PROJ).into(),
+                            (PhysicLayer::PLAYER
+                                | PhysicLayer::PLAYER_PROJ
+                                | PhysicLayer::EXPLOSION)
+                                .into(),
+                        ),
+                        ..Default::default()
+                    },
+                    active_collision_types: ActiveCollisionTypes::KINEMATIC_STATIC,
+                    ..Default::default()
+                });
             });
     }
 }

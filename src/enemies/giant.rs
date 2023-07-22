@@ -62,8 +62,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                 collider: Collider::cuboid(GIANT_SHAPE.x / 2.0, GIANT_SHAPE.y / 2.0),
                 collision_groups: CollisionGroups::new(
                     (PhysicLayer::ENEMY | PhysicLayer::GIANT).into(),
-                    (PhysicLayer::GROUND | PhysicLayer::PLAYER_PROJ)
-                        .into(),
+                    (PhysicLayer::GROUND | PhysicLayer::PLAYER | PhysicLayer::PLAYER_PROJ).into(),
                 ),
                 friction: Friction::coefficient(2.0),
                 restitution: Restitution::coefficient(0.2),

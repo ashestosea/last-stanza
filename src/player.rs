@@ -7,7 +7,8 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use bevy_rapier2d::prelude::*;
 
-pub const PLAYER_CENTER: Vec2 = Vec2::new(0.0, 8.0);
+pub const PLAYER_CENTER: Vec2 = Vec2::new(0.0, 8.75);
+pub const PLAYER_SIZE: Vec2 = Vec2::new(0.75, 1.5);
 
 pub struct PlayerPlugin;
 
@@ -25,6 +26,7 @@ impl Plugin for PlayerPlugin {
                 launch,
                 projectile_destruction,
                 projectile_timeouts,
+                hit,
             )
                 .in_set(OnUpdate(GameState::Playing)),
         );
@@ -64,14 +66,21 @@ fn spawn_player(mut commands: Commands) {
             // texture: textures.texture_bevy.clone(),
             sprite: Sprite {
                 color: Color::RED,
-                anchor: bevy::sprite::Anchor::BottomCenter,
-                custom_size: Some(Vec2::new(0.75, 1.5)),
+                custom_size: Some(PLAYER_SIZE),
                 ..Default::default()
             },
             transform: Transform::from_translation(PLAYER_CENTER.extend(0.0)),
             ..Default::default()
         })
-        .insert(Player);
+        .insert(Player)
+        .insert(RigidBody::Fixed)
+        .insert(ActiveCollisionTypes::DYNAMIC_STATIC | ActiveCollisionTypes::KINEMATIC_STATIC)
+        .insert(Collider::cuboid(PLAYER_SIZE.x / 2.0, PLAYER_SIZE.y / 2.0))
+        .insert(CollidingEntities::default())
+        .insert(CollisionGroups::new(
+            PhysicLayer::PLAYER.into(),
+            (PhysicLayer::ENEMY | PhysicLayer::ENEMY_PROJ).into(),
+        ));
 }
 
 fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>) -> Entity {
@@ -112,7 +121,7 @@ fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>)
         .insert(Charging {
             timer: Timer::from_seconds(10.0, TimerMode::Repeating),
         })
-        .insert(GravityScale {0: 3.0})
+        .insert(GravityScale { 0: 3.0 })
         .id();
 
     return *entity;
@@ -138,8 +147,12 @@ fn launch(
     mut query: Query<(Entity, &mut Velocity, &PlayerProjectile), With<Fired>>,
 ) {
     for (entity, mut vel, projectile) in query.iter_mut() {
-        vel.linvel = mouse_data.vec_from_player * (((projectile.size as f32 - 1.0).atan() * 12.0) + 7.0);
-        commands.entity(entity).remove::<Fired>().insert(Sleeping{sleeping: false, ..Default::default()});
+        vel.linvel =
+            mouse_data.vec_from_player * (((projectile.size as f32 - 1.0).atan() * 12.0) + 7.0);
+        commands.entity(entity).remove::<Fired>().insert(Sleeping {
+            sleeping: false,
+            ..Default::default()
+        });
     }
 }
 
@@ -203,8 +216,7 @@ fn projectile_timeouts(
     for (entity, mut timeout) in query.iter_mut() {
         if timeout.timer.finished() {
             projectile_explode(&mut commands, entity);
-        }
-        else {
+        } else {
             timeout.timer.tick(time.delta());
         }
     }
@@ -223,6 +235,20 @@ fn projectile_destruction(
                     break;
                 }
             }
+        }
+    }
+}
+
+fn hit(
+    mut state: ResMut<NextState<GameState>>,
+    mut time: ResMut<Time>,
+    query: Query<&CollidingEntities, With<Player>>,
+) {
+    for colliding_entities in query.iter() {
+        if !colliding_entities.is_empty() {
+            state.set(GameState::Menu);
+            time.pause();
+            return;
         }
     }
 }

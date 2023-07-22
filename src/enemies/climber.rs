@@ -59,6 +59,7 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
                     (PhysicLayer::ENEMY | PhysicLayer::CLIMBER).into(),
                     (PhysicLayer::GROUND
                         | PhysicLayer::CLIFF_EDGE
+                        | PhysicLayer::PLAYER
                         | PhysicLayer::PLAYER_PROJ
                         | PhysicLayer::EXPLOSION)
                         .into(),

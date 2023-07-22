@@ -153,27 +153,34 @@ pub struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            (
-                update_enemy_spawns,
-                enemy_spawner,
-                hop,
-                hop_grounding,
-                enemy_hits,
-                explosion_cleanup,
-                explosion_animate,
+        app.add_system(clear_enemies.in_schedule(OnEnter(GameState::Playing)))
+            .add_systems(
+                (
+                    update_enemy_spawns,
+                    enemy_spawner,
+                    hop,
+                    hop_grounding,
+                    enemy_hits,
+                    explosion_cleanup,
+                    explosion_animate,
+                )
+                    .in_set(OnUpdate(GameState::Playing)),
             )
-                .in_set(OnUpdate(GameState::Playing)),
-        )
-        .init_resource::<SpawnRates>()
-        .insert_resource(SpawnTimer {
-            timer: Timer::from_seconds(1.0, TimerMode::Repeating),
-        })
-        .add_plugin(HopperPlugin)
-        .add_plugin(ClimberPlugin)
-        .add_plugin(LurkerPlugin)
-        .add_plugin(GiantPlugin)
-        .add_plugin(ProjectilePlugin);
+            .init_resource::<SpawnRates>()
+            .insert_resource(SpawnTimer {
+                timer: Timer::from_seconds(1.0, TimerMode::Repeating),
+            })
+            .add_plugin(HopperPlugin)
+            .add_plugin(ClimberPlugin)
+            .add_plugin(LurkerPlugin)
+            .add_plugin(GiantPlugin)
+            .add_plugin(ProjectilePlugin);
+    }
+}
+
+fn clear_enemies(mut commands: Commands, query: Query<Entity, With<Enemy>>) {
+    for entity in query.iter() {
+        let _ = &commands.entity(entity).despawn_recursive();
     }
 }
 

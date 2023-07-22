@@ -62,7 +62,10 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
                 collider: Collider::cuboid(LURKER_SHAPE.x / 2.0, LURKER_SHAPE.y / 2.0),
                 collision_groups: CollisionGroups::new(
                     (PhysicLayer::ENEMY | PhysicLayer::LURKER).into(),
-                    (PhysicLayer::GROUND | PhysicLayer::PLAYER_PROJ | PhysicLayer::EXPLOSION)
+                    (PhysicLayer::GROUND
+                        | PhysicLayer::PLAYER
+                        | PhysicLayer::PLAYER_PROJ
+                        | PhysicLayer::EXPLOSION)
                         .into(),
                 ),
                 friction: Friction::coefficient(10.0),
@@ -76,7 +79,10 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
             enemy: Enemy { health: 1, facing },
             lurker: Lurker {
                 step: 0,
-                timer: Timer::from_seconds(rand::thread_rng().gen_range(3f32..5f32), TimerMode::Once),
+                timer: Timer::from_seconds(
+                    rand::thread_rng().gen_range(3f32..5f32),
+                    TimerMode::Once,
+                ),
             },
         });
     }
