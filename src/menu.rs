@@ -7,9 +7,9 @@ pub struct MenuPlugin;
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ButtonColors>()
-            .add_system(setup_menu.in_schedule(OnEnter(GameState::Menu)))
-            .add_system(click_play_button.in_set(OnUpdate(GameState::Menu)))
-            .add_system(cleanup_menu.in_schedule(OnExit(GameState::Menu)));
+            .add_systems(OnEnter, setup_menu.in_set(GameState::Menu))
+            .add_systems(Update, click_play_button.in_set(GameState::Menu))
+            .add_systems(OnExit, cleanup_menu.in_set(GameState::Menu));
     }
 }
 
@@ -36,7 +36,8 @@ fn setup_menu(
     commands
         .spawn(ButtonBundle {
             style: Style {
-                size: Size::new(Val::Px(120.0), Val::Px(50.0)),
+                width: 120,
+                height: 50,
                 margin: UiRect::all(Val::Auto),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,

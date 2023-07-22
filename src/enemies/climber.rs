@@ -27,7 +27,7 @@ pub struct ClimberPlugin;
 
 impl Plugin for ClimberPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems((climb, spawn, health).in_set(OnUpdate(GameState::Playing)));
+        app.add_systems(Update, (climb, spawn, health).in_set(GameState::Playing));
     }
 }
 

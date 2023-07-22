@@ -8,7 +8,7 @@ pub struct WorldPlugin;
 /// Player logic is only active during the State `GameState::Playing`
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(spawn_world.in_schedule(OnEnter(GameState::Playing)));
+        app.add_systems(OnEnter, spawn_world.in_set(GameState::Playing));
     }
 }
 

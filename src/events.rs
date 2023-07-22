@@ -1,16 +1,17 @@
 use crate::{enemies::SpawnRates, loading::GameData, GameState};
-use bevy::{prelude::*, time::Stopwatch, utils::HashMap};
+use bevy::{prelude::*, reflect::TypePath, time::Stopwatch, utils::HashMap};
 
 pub struct EventsPlugin;
 
 impl Plugin for EventsPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<EnemySpawnsChanged>()
-            .add_system(load.in_schedule(OnEnter(GameState::Menu)))
-            .add_system(update.in_set(OnUpdate(GameState::Playing)));
+            .add_systems(OnEnter, load.in_set(GameState::Menu))
+            .add_systems(Update, update.in_set(GameState::Playing));
     }
 }
 
+#[derive(Event)]
 pub struct EnemySpawnsChanged {
     pub min_spawn_time: Option<f32>,
     pub max_spawn_time: Option<f32>,
@@ -22,7 +23,7 @@ pub struct EnemySpawnsChanged {
     pub behemoth: Option<f32>,
 }
 
-#[derive(serde::Deserialize, bevy::reflect::TypeUuid, Clone)]
+#[derive(serde::Deserialize, bevy::reflect::TypeUuid, Clone, TypePath)]
 #[uuid = "c2609287-9672-4cb8-b95d-afb0a8df2200"]
 pub struct TimeTable {
     pub t: toml::value::Table,

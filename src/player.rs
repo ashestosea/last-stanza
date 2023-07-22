@@ -18,8 +18,9 @@ impl Plugin for PlayerPlugin {
             world_pos: Vec2::ZERO,
             vec_from_player: Vec2::Y,
         })
-        .add_system(spawn_player.in_schedule(OnEnter(GameState::Playing)))
+        .add_systems(OnEnter, spawn_player.in_set(GameState::Playing))
         .add_systems(
+            Update,
             (
                 mouse_input,
                 aim,
@@ -28,7 +29,7 @@ impl Plugin for PlayerPlugin {
                 projectile_timeouts,
                 hit,
             )
-                .in_set(OnUpdate(GameState::Playing)),
+                .in_set(GameState::Playing),
         );
     }
 }

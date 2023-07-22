@@ -153,8 +153,9 @@ pub struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(clear_enemies.in_schedule(OnEnter(GameState::Playing)))
+        app.add_systems(OnEnter, clear_enemies.in_set(GameState::Playing))
             .add_systems(
+                Update,
                 (
                     update_enemy_spawns,
                     enemy_spawner,
@@ -164,17 +165,17 @@ impl Plugin for EnemiesPlugin {
                     explosion_cleanup,
                     explosion_animate,
                 )
-                    .in_set(OnUpdate(GameState::Playing)),
+                    .in_set(GameState::Playing),
             )
             .init_resource::<SpawnRates>()
             .insert_resource(SpawnTimer {
                 timer: Timer::from_seconds(1.0, TimerMode::Repeating),
             })
-            .add_plugin(HopperPlugin)
-            .add_plugin(ClimberPlugin)
-            .add_plugin(LurkerPlugin)
-            .add_plugin(GiantPlugin)
-            .add_plugin(ProjectilePlugin);
+            .add_plugins(HopperPlugin)
+            .add_plugins(ClimberPlugin)
+            .add_plugins(LurkerPlugin)
+            .add_plugins(GiantPlugin)
+            .add_plugins(ProjectilePlugin);
     }
 }
 

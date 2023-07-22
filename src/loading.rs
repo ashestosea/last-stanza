@@ -8,7 +8,7 @@ pub struct LoadingPlugin;
 
 impl Plugin for LoadingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(TomlAssetPlugin::<TimeTable>::new(&["time.toml"]))
+        app.add_plugins(TomlAssetPlugin::<TimeTable>::new(&["time.toml"]))
             .add_loading_state(
                 LoadingState::new(GameState::Loading).continue_to_state(GameState::Menu),
             )

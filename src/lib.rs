@@ -16,7 +16,6 @@ use crate::world::WorldPlugin;
 
 use bevy::app::App;
 use bevy::prelude::*;
-use bevy::reflect::FromReflect;
 use bevy_rapier2d::prelude::*;
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
@@ -32,25 +31,25 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_state::<GameState>()
-            .add_plugin(LoadingPlugin)
-            .add_plugin(EventsPlugin)
-            .add_plugin(MainCameraPlugin)
-            .add_plugin(MenuPlugin)
-            //     .add_plugin(ActionsPlugin)
-            //     .add_plugin(InternalAudioPlugin)
-            .add_plugin(WorldPlugin)
-            .add_plugin(PlayerPlugin)
-            .add_plugin(EnemiesPlugin)
-            .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(72.0))
-            // .add_plugin(RapierDebugRenderPlugin::default())
-            .add_system(cleanup_far_entities.in_set(OnUpdate(GameState::Playing)))
-            .add_startup_system(setup_rapier);
-            // .insert_resource(Gravity::from(Vec2::new(0.0, -9.81)));
+            .add_plugins(LoadingPlugin)
+            .add_plugins(EventsPlugin)
+            .add_plugins(MainCameraPlugin)
+            .add_plugins(MenuPlugin)
+            //     .add_plugins(ActionsPlugin)
+            //     .add_plugins(InternalAudioPlugin)
+            .add_plugins(WorldPlugin)
+            .add_plugins(PlayerPlugin)
+            .add_plugins(EnemiesPlugin)
+            .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(72.0))
+            // .add_plugins(RapierDebugRenderPlugin::default())
+            .add_systems(Update, cleanup_far_entities.in_set(GameState::Playing))
+            .add_systems(Startup, setup_rapier);
+        // .insert_resource(Gravity::from(Vec2::new(0.0, -9.81)));
 
         // #[cfg(debug_assertions)]
         // {
-        //     app.add_plugin(FrameTimeDiagnosticsPlugin::default())
-        //         .add_plugin(LogDiagnosticsPlugin::default());
+        //     app.add_plugins(FrameTimeDiagnosticsPlugin::default())
+        //         .add_plugins(LogDiagnosticsPlugin::default());
         // }
     }
 }
@@ -73,7 +72,7 @@ fn cleanup_far_entities(mut commands: Commands, query: Query<(Entity, &Transform
 
 bitflags::bitflags! {
     /// A bit mask identifying groups for interaction.
-    #[derive(Component, Reflect, FromReflect)]
+    #[derive(Component, Reflect)]
     #[reflect(Component, Hash, PartialEq)]
     #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
     pub struct PhysicLayer: u32 {

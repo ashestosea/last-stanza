@@ -28,7 +28,7 @@ pub struct GiantPlugin;
 
 impl Plugin for GiantPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems((spawn, hit, health).in_set(OnUpdate(GameState::Playing)));
+        app.add_systems(Update, (spawn, hit, health).in_set(GameState::Playing));
     }
 }
 

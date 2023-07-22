@@ -28,7 +28,10 @@ pub struct HopperPlugin;
 
 impl Plugin for HopperPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems((spawn, shoot, health, animate).in_set(OnUpdate(GameState::Playing)));
+        app.add_systems(
+            Update,
+            (spawn, shoot, health, animate).in_set(GameState::Playing),
+        );
     }
 }
 

@@ -32,7 +32,7 @@ pub struct LurkerPlugin;
 
 impl Plugin for LurkerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems((lurk, spawn, health).in_set(OnUpdate(GameState::Playing)));
+        app.add_systems(Update, (lurk, spawn, health).in_set(GameState::Playing));
     }
 }
 

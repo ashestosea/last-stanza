@@ -6,10 +6,10 @@ use last_stanza::GamePlugin;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        // .add_plugin(EditorPlugin)
-        // .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
-        // .add_plugin(bevy::diagnostic::EntityCountDiagnosticsPlugin)
-        .add_plugin(GamePlugin)
+        // .add_plugins(EditorPlugin)
+        // .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
+        // .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
+        .add_plugins(GamePlugin)
         // .add_startup_system(spawn_window)
         .run();
 }
