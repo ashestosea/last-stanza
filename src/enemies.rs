@@ -10,10 +10,10 @@ pub use crate::enemies::giant::Giant;
 use crate::events::EnemySpawnsChanged;
 use crate::player::PlayerProjectile;
 use crate::world::Ground;
-use crate::{GameState, PhysicLayer};
+use crate::{GameState, PhysicsLayers};
 use benimator::FrameRate;
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
+use bevy_xpbd_2d::prelude::*;
 use rand::Rng;
 
 use self::climber::{ClimberPlugin, ClimberSpawn};
@@ -70,7 +70,7 @@ struct ExplosionBundle {
     sprite_bundle: SpriteSheetBundle,
     rigidbody: RigidBody,
     collider: Collider,
-    collision_groups: CollisionGroups,
+    collision_layers: CollisionLayers,
     sensor: Sensor,
     animation: ExplosionAnimation,
     animation_state: ExplosionAnimationState,
@@ -81,11 +81,11 @@ impl Default for ExplosionBundle {
     fn default() -> Self {
         Self {
             sprite_bundle: Default::default(),
-            rigidbody: RigidBody::KinematicVelocityBased,
+            rigidbody: RigidBody::Kinematic,
             collider: Default::default(),
-            collision_groups: CollisionGroups::new(
-                PhysicLayer::EXPLOSION.into(),
-                PhysicLayer::ENEMY.into(),
+            collision_layers: CollisionLayers::new(
+                [PhysicsLayers::Explosion],
+                [PhysicsLayers::Enemy],
             ),
             sensor: Sensor::default(),
             animation: ExplosionAnimation(benimator::Animation::from_indices(
@@ -121,6 +121,12 @@ pub(crate) struct Hop {
     pub power: Vec2,
 }
 
+#[derive(Bundle, Default)]
+pub(crate) struct HopBundle {
+    pub hop: Hop,
+    pub ray: RayCaster,
+}
+
 #[derive(Resource)]
 struct SpawnTimer {
     timer: Timer,
@@ -153,7 +159,7 @@ pub struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter, clear_enemies.in_set(GameState::Playing))
+        app.add_systems(OnEnter(GameState::Playing), clear_enemies)
             .add_systems(
                 Update,
                 (
@@ -269,45 +275,58 @@ fn enemy_spawner(
 fn hop(
     mut query: Query<(
         &Enemy,
-        &Velocity,
-        &mut ExternalImpulse,
+        &LinearVelocity,
+        &mut ExternalForce,
         &CollidingEntities,
         &Hop,
     )>,
 ) {
-    for (enemy, vel, mut imp, colliding_entities, hop) in query.iter_mut() {
+    for (enemy, vel, mut force, colliding_entities, hop) in query.iter_mut() {
         if hop.grounded {
-            imp.impulse = hop.power;
+            force.set_force(hop.power);
         } else if colliding_entities.is_empty() {
             // Nudge Hopping actor if it's stalled out
-            if vel.linvel.x.abs() < 0.1 && vel.linvel.y.abs() < 0.1 {
+            if vel.x.abs() < 0.1 && vel.y.abs() < 0.1 {
                 let mul: f32 = enemy.facing.into();
-                imp.impulse = Vec2::X * 2.0 * mul;
+                force.set_force(Vec2::X * 2.0 * mul);
             }
         }
     }
 }
 
 fn hop_grounding(
-    mut hop_query: Query<(Entity, &mut Hop)>,
+    mut query: Query<(&mut Hop, &RayHits)>,
     ground_query: Query<Entity, With<Ground>>,
-    rapier_context: Res<RapierContext>,
 ) {
-    for (hop_entity, mut hop) in hop_query.iter_mut() {
-        hop.grounded = false;
-
-        for ground_entity in ground_query.iter() {
-            if let Some(contact) = rapier_context.contact_pair(hop_entity, ground_entity) {
-                for manifold in contact.manifolds() {
-                    if manifold.normal() == Vec2::Y {
-                        hop.grounded = true;
-                        break;
-                    }
-                }
+    for (mut hop, hits) in query.iter_mut() {
+        for hit in hits.iter_sorted() {
+            if hit.normal == Vec2::Y && ground_query.contains(hit.entity) {
+                hop.grounded = true;
+                return;
             }
         }
     }
 }
+
+// fn hop_grounding_events2(
+//     mut evt_reader: EventReader<Collision>,
+//     mut hop_query: Query<(Entity, &mut Hop, &CollidingEntities)>,
+//     ground_query: Query<Entity, With<Ground>>) {
+//     for Collision(contact) in evt_reader.iter() {
+//         for (hop_entity, mut hop, colliding_entities) in hop_query.iter() {
+//             for colliding_entity in colliding_entities.iter() {
+//                 if ground_query.contains(*colliding_entity) {
+//                     for a in evt_reader.iter() {
+//                         if (a.0.entity1 == hop_entity || a.0.entity2 == hop_entity) && a.0.normal.x == 0.0 {
+//                             hop.grounded = true;
+//                             return;
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
 
 fn enemy_hits(
     proj_query: Query<(Entity, &PlayerProjectile)>,
@@ -317,13 +336,13 @@ fn enemy_hits(
     for (mut enemy, colliding_entities) in query.iter_mut() {
         for coll_entity in colliding_entities.iter() {
             for (proj_entity, projectile) in proj_query.iter() {
-                if coll_entity == proj_entity {
+                if coll_entity == &proj_entity {
                     enemy.health -= projectile.size;
                 }
             }
 
             for (ex_entity, explosion) in explosion_query.iter() {
-                if coll_entity == ex_entity {
+                if coll_entity == &ex_entity {
                     enemy.health -= explosion.power;
                 }
             }

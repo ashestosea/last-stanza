@@ -1,12 +1,14 @@
 use crate::enemies::enemy_projectile::ProjectileSpawn;
 use crate::enemies::{Enemy, Explosion, ExplosionBundle, Facing, Hop};
 use crate::loading::TextureAssets;
-use crate::{DynamicActorBundle, GameState, PhysicLayer};
+use crate::{DynamicActorBundle, GameState, PhysicsLayers};
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
+use bevy_xpbd_2d::prelude::*;
 use rand::Rng;
 
-const HOPPER_SHAPE: Vec2 = Vec2::new(2.0, 2.0);
+use super::HopBundle;
+
+const COLLIDER_SHAPE: Vec2 = Vec2::new(2.0, 2.0);
 
 #[derive(Component, Default)]
 pub(crate) struct HopperSpawn;
@@ -20,8 +22,8 @@ struct HopperBundle {
     dynamic_actor_bundle: DynamicActorBundle,
     enemy: Enemy,
     hopper: Hopper,
-    hop: Hop,
-    external_impulse: ExternalImpulse,
+    hop: HopBundle,
+    external_force: ExternalForce,
 }
 
 pub struct HopperPlugin;
@@ -63,30 +65,44 @@ fn spawn(
                 transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, height, 0.0)),
                 sprite: TextureAtlasSprite {
                     flip_x: facing.into(),
-                    custom_size: Some(HOPPER_SHAPE),
+                    custom_size: Some(COLLIDER_SHAPE),
                     ..default()
                 },
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
-                collider: Collider::cuboid(HOPPER_SHAPE.x / 2.0, HOPPER_SHAPE.y / 2.0),
-                collision_groups: CollisionGroups::new(
-                    (PhysicLayer::ENEMY | PhysicLayer::HOPPER).into(),
-                    (PhysicLayer::GROUND
-                        | PhysicLayer::HOPPER
-                        | PhysicLayer::PLAYER
-                        | PhysicLayer::PLAYER_PROJ
-                        | PhysicLayer::EXPLOSION)
-                        .into(),
+                collider: Collider::cuboid(COLLIDER_SHAPE.x / 2.0, COLLIDER_SHAPE.y / 2.0),
+                collision_layers: CollisionLayers::new(
+                    [PhysicsLayers::Enemy, PhysicsLayers::Hopper],
+                    [
+                        PhysicsLayers::Ground,
+                        PhysicsLayers::Hopper,
+                        PhysicsLayers::Player,
+                        PhysicsLayers::PlayerProj,
+                        PhysicsLayers::Explosion,
+                    ],
                 ),
-                friction: Friction::coefficient(2.0),
-                restitution: Restitution::coefficient(0.2),
+                friction: Friction::new(2.0),
+                restitution: Restitution::new(0.2),
                 ..Default::default()
             },
             enemy: Enemy { health: 1, facing },
-            hop: Hop {
-                grounded: false,
-                power,
+            hop: HopBundle {
+                hop: Hop {
+                    grounded: false,
+                    power,
+                },
+                ray: RayCaster::new(
+                    Vec2 {
+                        x: 0.0,
+                        y: -(COLLIDER_SHAPE.y / 2.0),
+                    },
+                    Vec2::NEG_Y,
+                )
+                .with_max_time_of_impact(0.1)
+                .with_query_filter(SpatialQueryFilter::new().with_masks_from_bits(
+                    PhysicsLayers::Ground.to_bits() | PhysicsLayers::Hopper.to_bits(),
+                )),
             },
             ..Default::default()
         });
@@ -103,11 +119,11 @@ fn shoot(mut commands: Commands, query: Query<&Transform, With<Hopper>>) {
     }
 }
 
-fn animate(mut query: Query<(&mut TextureAtlasSprite, &Velocity)>) {
+fn animate(mut query: Query<(&mut TextureAtlasSprite, &LinearVelocity)>) {
     for (mut texture, velocity) in query.iter_mut() {
-        if velocity.linvel.y > 0.2 {
+        if velocity.y > 0.2 {
             texture.index = 0;
-        } else if velocity.linvel.y < -0.2 {
+        } else if velocity.y < -0.2 {
             texture.index = 2;
         } else {
             texture.index = 1;

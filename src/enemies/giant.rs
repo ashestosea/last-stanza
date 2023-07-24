@@ -1,12 +1,14 @@
 use crate::enemies::{Enemy, Explosion, ExplosionBundle, Facing, Hop};
 use crate::loading::TextureAssets;
 use crate::player::PlayerProjectile;
-use crate::{DynamicActorBundle, GameState, PhysicLayer};
+use crate::{DynamicActorBundle, GameState, PhysicsLayers};
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
+use bevy_xpbd_2d::prelude::*;
 use rand::Rng;
 
-const GIANT_SHAPE: Vec2 = Vec2::new(3.0, 6.0);
+use super::HopBundle;
+
+const COLLIDER_SHAPE: Vec2 = Vec2::new(3.0, 6.0);
 
 #[derive(Component, Default)]
 pub(crate) struct GiantSpawn;
@@ -20,8 +22,8 @@ struct GiantBundle {
     dynamic_actor_bundle: DynamicActorBundle,
     enemy: Enemy,
     giant: Giant,
-    hop: Hop,
-    external_impulse: ExternalImpulse,
+    hop: HopBundle,
+    external_force: ExternalForce,
 }
 
 pub struct GiantPlugin;
@@ -53,25 +55,42 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                 transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 6.0, 0.0)),
                 sprite: Sprite {
                     color: Color::BLUE,
-                    custom_size: Some(GIANT_SHAPE),
+                    custom_size: Some(COLLIDER_SHAPE),
                     ..default()
                 },
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
-                collider: Collider::cuboid(GIANT_SHAPE.x / 2.0, GIANT_SHAPE.y / 2.0),
-                collision_groups: CollisionGroups::new(
-                    (PhysicLayer::ENEMY | PhysicLayer::GIANT).into(),
-                    (PhysicLayer::GROUND | PhysicLayer::PLAYER | PhysicLayer::PLAYER_PROJ).into(),
+                collider: Collider::cuboid(COLLIDER_SHAPE.x / 2.0, COLLIDER_SHAPE.y / 2.0),
+                collision_layers: CollisionLayers::new(
+                    [PhysicsLayers::Enemy, PhysicsLayers::Giant],
+                    [
+                        PhysicsLayers::Ground,
+                        PhysicsLayers::Player,
+                        PhysicsLayers::PlayerProj,
+                    ],
                 ),
-                friction: Friction::coefficient(2.0),
-                restitution: Restitution::coefficient(0.2),
+                friction: Friction::new(2.0),
+                restitution: Restitution::new(0.2),
                 ..Default::default()
             },
             enemy: Enemy { health: 20, facing },
-            hop: Hop {
-                grounded: false,
-                power,
+            hop: HopBundle {
+                hop: Hop {
+                    grounded: false,
+                    power,
+                },
+                ray: RayCaster::new(
+                    Vec2 {
+                        x: 0.0,
+                        y: -(COLLIDER_SHAPE.y / 2.0),
+                    },
+                    Vec2::NEG_Y,
+                )
+                .with_max_time_of_impact(0.1)
+                .with_query_filter(SpatialQueryFilter::new().with_masks_from_bits(
+                    PhysicsLayers::Ground.to_bits() | PhysicsLayers::Hopper.to_bits(),
+                )),
             },
             ..Default::default()
         });
@@ -80,14 +99,15 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
 
 fn hit(
     proj_query: Query<(Entity, &PlayerProjectile)>,
-    mut query: Query<(&mut ExternalImpulse, &Enemy, &CollidingEntities), With<Giant>>,
+    mut query: Query<(&mut ExternalForce, &Enemy, &CollidingEntities), With<Giant>>,
 ) {
-    for (mut imp, enemy, colliding_entities) in query.iter_mut() {
+    for (mut force, enemy, colliding_entities) in query.iter_mut() {
         for coll_entity in colliding_entities.iter() {
             for (proj_entity, projectile) in proj_query.iter() {
-                if coll_entity == proj_entity {
-                    imp.impulse =
-                        Vec2::X * -f32::from(enemy.facing) * (projectile.size as f32) * 7.5;
+                if coll_entity == &proj_entity {
+                    force.set_force(
+                        Vec2::X * -f32::from(enemy.facing) * (projectile.size as f32) * 7.5,
+                    );
                 }
             }
         }

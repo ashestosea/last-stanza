@@ -22,7 +22,7 @@ serde = "*"
 # bevy-inspector-egui = "0.12.1"
 # bevy_editor_pls = {git = "https://github.com/jakobhellermann/bevy_editor_pls"}
 bitflags = "*"
-bevy_rapier2d = "0.22.0"
+bevy_xpbd_2d = "0.2.0"
 rand = "*"
 toml = "*"
 # directories = "*"

@@ -1,11 +1,11 @@
 use crate::enemies::enemy_projectile::EnemyProjectile;
 use crate::enemies::Enemy;
 use crate::main_camera::MainCamera;
-use crate::PhysicLayer;
+use crate::PhysicsLayers;
 use crate::{loading::TextureAssets, DynamicActorBundle, GameState};
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use bevy_rapier2d::prelude::*;
+use bevy_xpbd_2d::prelude::*;
 
 pub const PLAYER_CENTER: Vec2 = Vec2::new(0.0, 8.75);
 pub const PLAYER_SIZE: Vec2 = Vec2::new(0.75, 1.5);
@@ -18,7 +18,7 @@ impl Plugin for PlayerPlugin {
             world_pos: Vec2::ZERO,
             vec_from_player: Vec2::Y,
         })
-        .add_systems(OnEnter, spawn_player.in_set(GameState::Playing))
+        .add_systems(OnEnter(GameState::Playing), spawn_player)
         .add_systems(
             Update,
             (
@@ -74,13 +74,12 @@ fn spawn_player(mut commands: Commands) {
             ..Default::default()
         })
         .insert(Player)
-        .insert(RigidBody::Fixed)
-        .insert(ActiveCollisionTypes::DYNAMIC_STATIC | ActiveCollisionTypes::KINEMATIC_STATIC)
+        .insert(RigidBody::Static)
         .insert(Collider::cuboid(PLAYER_SIZE.x / 2.0, PLAYER_SIZE.y / 2.0))
         .insert(CollidingEntities::default())
-        .insert(CollisionGroups::new(
-            PhysicLayer::PLAYER.into(),
-            (PhysicLayer::ENEMY | PhysicLayer::ENEMY_PROJ).into(),
+        .insert(CollisionLayers::new(
+            [PhysicsLayers::Player],
+            [PhysicsLayers::Enemy, PhysicsLayers::EnemyProj],
         ));
 }
 
@@ -98,22 +97,27 @@ fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>)
         })
         .insert(PlayerProjectile { size: 1 })
         .insert(DynamicActorBundle {
-            rigidbody: RigidBody::Fixed,
+            rigidbody: RigidBody::Static,
             locked_axes: LockedAxes::ROTATION_LOCKED,
             collider: Collider::ball(0.5),
-            collision_groups: CollisionGroups::new(
-                PhysicLayer::PLAYER_PROJ.into(),
-                (PhysicLayer::GROUND | PhysicLayer::ENEMY | PhysicLayer::ENEMY_PROJ).into(),
+            collision_layers: CollisionLayers::new(
+                [PhysicsLayers::PlayerProj],
+                [
+                    PhysicsLayers::Ground,
+                    PhysicsLayers::Enemy,
+                    PhysicsLayers::EnemyProj,
+                ],
             ),
             friction: Friction {
-                coefficient: 0.0,
-                combine_rule: CoefficientCombineRule::Min,
+                static_coefficient: 0.0,
+                dynamic_coefficient: 0.0,
+                combine_rule: CoefficientCombine::Min,
             },
             restitution: Restitution {
                 coefficient: 2.0,
                 combine_rule: Default::default(),
             },
-            mass: ColliderMassProperties::Mass(100.0),
+            mass: Mass(100.0),
             ..Default::default()
         })
         .insert(Timeout {
@@ -145,15 +149,17 @@ fn aim(
 fn launch(
     mut commands: Commands,
     mouse_data: Res<MouseData>,
-    mut query: Query<(Entity, &mut Velocity, &PlayerProjectile), With<Fired>>,
+    mut query: Query<(Entity, &mut LinearVelocity, &PlayerProjectile), With<Fired>>,
 ) {
     for (entity, mut vel, projectile) in query.iter_mut() {
-        vel.linvel =
+        let velocity =
             mouse_data.vec_from_player * (((projectile.size as f32 - 1.0).atan() * 12.0) + 7.0);
-        commands.entity(entity).remove::<Fired>().insert(Sleeping {
-            sleeping: false,
-            ..Default::default()
-        });
+        vel.x = velocity.x;
+        vel.y = velocity.y;
+        commands
+            .entity(entity)
+            .remove::<Fired>()
+            .insert(SleepingDisabled);
     }
 }
 
@@ -231,7 +237,7 @@ fn projectile_destruction(
     for (proj_entity, colliding_entities) in proj_query.iter_mut() {
         for e in colliding_entities.iter() {
             for enemy_entity in enemy_query.iter() {
-                if enemy_entity == e {
+                if &enemy_entity == e {
                     projectile_explode(&mut commands, proj_entity);
                     break;
                 }

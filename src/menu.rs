@@ -7,9 +7,9 @@ pub struct MenuPlugin;
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ButtonColors>()
-            .add_systems(OnEnter, setup_menu.in_set(GameState::Menu))
+            .add_systems(OnEnter(GameState::Menu), setup_menu)
             .add_systems(Update, click_play_button.in_set(GameState::Menu))
-            .add_systems(OnExit, cleanup_menu.in_set(GameState::Menu));
+            .add_systems(OnExit(GameState::Menu), cleanup_menu);
     }
 }
 
@@ -36,8 +36,8 @@ fn setup_menu(
     commands
         .spawn(ButtonBundle {
             style: Style {
-                width: 120,
-                height: 50,
+                width: Val::Px(120.0),
+                height: Val::Px(50.0),
                 margin: UiRect::all(Val::Auto),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
@@ -74,7 +74,7 @@ fn click_play_button(
     >,
 ) {
     interaction_query.for_each_mut(|(interaction, mut color)| match *interaction {
-        Interaction::Clicked => {
+        Interaction::Pressed => {
             state.set(GameState::Playing);
         }
         Interaction::Hovered => {

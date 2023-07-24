@@ -6,7 +6,7 @@ pub struct EventsPlugin;
 impl Plugin for EventsPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<EnemySpawnsChanged>()
-            .add_systems(OnEnter, load.in_set(GameState::Menu))
+            .add_systems(OnEnter(GameState::Menu), load)
             .add_systems(Update, update.in_set(GameState::Playing));
     }
 }

@@ -1,8 +1,8 @@
 use crate::loading::TextureAssets;
 use crate::player::PLAYER_CENTER;
-use crate::{DynamicActorBundle, GameState, PhysicLayer};
+use crate::{DynamicActorBundle, GameState, PhysicsLayers};
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
+use bevy_xpbd_2d::prelude::*;
 
 const PROJECTILE_SHAPE: Vec2 = Vec2::new(0.3, 0.3);
 
@@ -18,7 +18,6 @@ pub(crate) struct EnemyProjectile;
 struct ProjectileChildBundle {
     sprite: SpriteBundle,
     dynamic_actor_bundle: DynamicActorBundle,
-    active_collision_types: ActiveCollisionTypes,
     sensor: Sensor,
     projectile: EnemyProjectile,
 }
@@ -48,9 +47,9 @@ fn spawn(
                     transform: Transform::from_xyz(spawn.pos.x, spawn.pos.y, 0.0),
                     ..Default::default()
                 },
-                RigidBody::KinematicVelocityBased,
+                RigidBody::Kinematic,
                 LockedAxes::ROTATION_LOCKED,
-                Velocity::linear((PLAYER_CENTER - spawn.pos).normalize()),
+                LinearVelocity((PLAYER_CENTER - spawn.pos).normalize()),
             ))
             .with_children(|parent| {
                 parent.spawn(ProjectileChildBundle {
@@ -65,18 +64,18 @@ fn spawn(
                         ..Default::default()
                     },
                     dynamic_actor_bundle: DynamicActorBundle {
-                        rigidbody: RigidBody::Fixed,
+                        rigidbody: RigidBody::Static,
                         collider: Collider::ball(0.3),
-                        collision_groups: CollisionGroups::new(
-                            (PhysicLayer::ENEMY | PhysicLayer::ENEMY_PROJ).into(),
-                            (PhysicLayer::PLAYER
-                                | PhysicLayer::PLAYER_PROJ
-                                | PhysicLayer::EXPLOSION)
-                                .into(),
+                        collision_layers: CollisionLayers::new(
+                            [PhysicsLayers::Enemy, PhysicsLayers::EnemyProj],
+                            [
+                                PhysicsLayers::Player,
+                                PhysicsLayers::PlayerProj,
+                                PhysicsLayers::Explosion,
+                            ],
                         ),
                         ..Default::default()
                     },
-                    active_collision_types: ActiveCollisionTypes::KINEMATIC_STATIC,
                     ..Default::default()
                 });
             });
@@ -94,11 +93,11 @@ fn projectile_destruction(
     }
 }
 
-fn animate(mut query: Query<(&mut TextureAtlasSprite, &Velocity)>) {
+fn animate(mut query: Query<(&mut TextureAtlasSprite, &LinearVelocity)>) {
     for (mut texture, velocity) in query.iter_mut() {
-        if velocity.linvel.y > 0.2 {
+        if velocity.y > 0.2 {
             texture.index = 0;
-        } else if velocity.linvel.y < -0.2 {
+        } else if velocity.y < -0.2 {
             texture.index = 2;
         } else {
             texture.index = 1;

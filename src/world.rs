@@ -1,6 +1,6 @@
-use crate::{loading::TextureAssets, GameState, PhysicLayer};
+use crate::{loading::TextureAssets, GameState, PhysicsLayers};
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
+use bevy_xpbd_2d::prelude::*;
 
 pub struct WorldPlugin;
 
@@ -8,7 +8,7 @@ pub struct WorldPlugin;
 /// Player logic is only active during the State `GameState::Playing`
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter, spawn_world.in_set(GameState::Playing));
+        app.add_systems(OnEnter(GameState::Playing), spawn_world);
     }
 }
 
@@ -20,7 +20,7 @@ struct WorldBundle {
     transform_bundle: TransformBundle,
     rigidbody: RigidBody,
     collider: Collider,
-    collision_groups: CollisionGroups,
+    collision_layers: CollisionLayers,
     friction: Friction,
     restitution: Restitution,
     ground: Ground,
@@ -30,11 +30,23 @@ impl Default for WorldBundle {
     fn default() -> Self {
         Self {
             transform_bundle: TransformBundle::default(),
-            rigidbody: RigidBody::Fixed,
+            rigidbody: RigidBody::Static,
             collider: Collider::default(),
-            collision_groups: CollisionGroups::new((PhysicLayer::GROUND).into(), Group::all()),
-            friction: Friction::coefficient(0.0),
-            restitution: Restitution::coefficient(0.0),
+            collision_layers: CollisionLayers::new(
+                [PhysicsLayers::Ground],
+                [
+                    PhysicsLayers::Behemoth,
+                    PhysicsLayers::Climber,
+                    PhysicsLayers::Diver,
+                    PhysicsLayers::Enemy,
+                    PhysicsLayers::Giant,
+                    PhysicsLayers::Hopper,
+                    PhysicsLayers::Lurker,
+                    PhysicsLayers::PlayerProj,
+                ],
+            ),
+            friction: Friction::new(0.0),
+            restitution: Restitution::new(0.0),
             ground: Ground,
         }
     }
@@ -119,9 +131,18 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
             })
             .insert(Sensor)
             .insert(Collider::cuboid(cliff_shape.x / 2.0, cliff_shape.y / 2.0))
-            .insert(CollisionGroups::new(
-                PhysicLayer::CLIFF_EDGE.into(),
-                Group::all(),
+            .insert(CollisionLayers::new(
+                [PhysicsLayers::CliffEdge],
+                [
+                    PhysicsLayers::Behemoth,
+                    PhysicsLayers::Climber,
+                    PhysicsLayers::Diver,
+                    PhysicsLayers::Enemy,
+                    PhysicsLayers::Giant,
+                    PhysicsLayers::Hopper,
+                    PhysicsLayers::Lurker,
+                    PhysicsLayers::PlayerProj,
+                ],
             ));
     }
 }

@@ -1,10 +1,10 @@
 use crate::{
     enemies::{Enemy, Explosion, ExplosionBundle, Facing},
     loading::TextureAssets,
-    DynamicActorBundle, GameState, PhysicLayer,
+    DynamicActorBundle, GameState, PhysicsLayers,
 };
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
+use bevy_xpbd_2d::prelude::*;
 use rand::Rng;
 
 const CLIMBER_SHAPE: Vec2 = Vec2::new(1.0, 2.0);
@@ -55,18 +55,19 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
             dynamic_actor_bundle: DynamicActorBundle {
                 rigidbody: RigidBody::Dynamic,
                 collider: Collider::cuboid(CLIMBER_SHAPE.x / 2.0, CLIMBER_SHAPE.y / 2.0),
-                collision_groups: CollisionGroups::new(
-                    (PhysicLayer::ENEMY | PhysicLayer::CLIMBER).into(),
-                    (PhysicLayer::GROUND
-                        | PhysicLayer::CLIFF_EDGE
-                        | PhysicLayer::PLAYER
-                        | PhysicLayer::PLAYER_PROJ
-                        | PhysicLayer::EXPLOSION)
-                        .into(),
+                collision_layers: CollisionLayers::new(
+                    [PhysicsLayers::Enemy, PhysicsLayers::Climber],
+                    [
+                        PhysicsLayers::Ground,
+                        PhysicsLayers::CliffEdge,
+                        PhysicsLayers::Player,
+                        PhysicsLayers::PlayerProj,
+                        PhysicsLayers::Explosion,
+                    ],
                 ),
-                friction: Friction::coefficient(0.0),
-                restitution: Restitution::coefficient(0.0),
-                velocity: Velocity::linear(Vec2::new(facing_mul * 2.0, 0.0)),
+                friction: Friction::ZERO,
+                restitution: Restitution::ZERO,
+                velocity: LinearVelocity(Vec2::new(facing_mul * 2.0, 0.0)),
                 ..Default::default()
             },
             enemy: Enemy { health: 1, facing },
@@ -76,19 +77,17 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
 }
 
 fn climb(
-    mut query: Query<(&mut Velocity, &CollidingEntities, &Enemy), With<Climber>>,
-    sensor_query: Query<(Entity, &CollisionGroups), With<Sensor>>,
+    mut query: Query<(&mut LinearVelocity, &CollidingEntities, &Enemy), With<Climber>>,
+    sensor_query: Query<(Entity, &CollisionLayers), With<Sensor>>,
 ) {
     for (mut velocity, colliding_entities, enemy) in query.iter_mut() {
         for e in colliding_entities.iter() {
-            for (entity, collision_groups) in sensor_query.iter() {
-                if e == entity {
-                    if collision_groups
-                        .memberships
-                        .contains(PhysicLayer::CLIFF_EDGE.into())
-                    {
+            for (entity, collision_layers) in sensor_query.iter() {
+                if e == &entity {
+                    if collision_layers.contains_group(PhysicsLayers::CliffEdge) {
                         let mul: f32 = enemy.facing.into();
-                        velocity.linvel = Vec2::new(1.0 * mul, 9.0);
+                        velocity.x = 1.0 * mul;
+                        velocity.y = 9.0;
                         return;
                     }
                 }
