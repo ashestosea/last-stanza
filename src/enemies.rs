@@ -171,7 +171,7 @@ impl Plugin for EnemiesPlugin {
                     explosion_cleanup,
                     explosion_animate,
                 )
-                    .in_set(GameState::Playing),
+                    .run_if(in_state(GameState::Playing)),
             )
             .init_resource::<SpawnRates>()
             .insert_resource(SpawnTimer {

@@ -32,7 +32,7 @@ impl Plugin for HopperPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (spawn, shoot, health, animate).in_set(GameState::Playing),
+            (spawn, shoot, health, animate).run_if(in_state(GameState::Playing)),
         );
     }
 }

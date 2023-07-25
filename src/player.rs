@@ -29,7 +29,7 @@ impl Plugin for PlayerPlugin {
                 projectile_timeouts,
                 hit,
             )
-                .in_set(GameState::Playing),
+                .run_if(in_state(GameState::Playing)),
         );
     }
 }

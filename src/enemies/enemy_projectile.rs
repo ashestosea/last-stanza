@@ -28,7 +28,7 @@ impl Plugin for ProjectilePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (spawn, projectile_destruction, animate).in_set(GameState::Playing),
+            (spawn, projectile_destruction, animate).run_if(in_state(GameState::Playing)),
         );
     }
 }

@@ -35,14 +35,13 @@ impl Plugin for GamePlugin {
             .add_plugins(EventsPlugin)
             .add_plugins(MainCameraPlugin)
             .add_plugins(MenuPlugin)
-            //     .add_plugins(ActionsPlugin)
-            //     .add_plugins(InternalAudioPlugin)
             .add_plugins(WorldPlugin)
             .add_plugins(PlayerPlugin)
             .add_plugins(EnemiesPlugin)
             .add_plugins(PhysicsPlugins::default())
-            .add_systems(Update, cleanup_far_entities.in_set(GameState::Playing));
+            // .add_systems(Update, cleanup_far_entities.run_if(in_state(GameState::Playing)))
         // .insert_resource(Gravity::from(Vec2::new(0.0, -9.81)));
+        ;
 
         // #[cfg(debug_assertions)]
         // {

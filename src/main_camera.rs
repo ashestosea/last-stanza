@@ -22,7 +22,7 @@ impl Plugin for MainCameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_camera).add_systems(
             Update,
-            (camera_shake, explosion_trauma, giant_steps).in_set(GameState::Playing),
+            (camera_shake, explosion_trauma, giant_steps).run_if(in_state(GameState::Playing)),
         );
     }
 }
