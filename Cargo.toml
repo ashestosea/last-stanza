@@ -16,13 +16,13 @@ bevy = { version = "0.11.0", default-features = false, features = [
     "multi-threaded",
     "png",
     "x11",
-    "serialize"
+    "serialize",
 ] }
 serde = "*"
 # bevy-inspector-egui = "0.12.1"
 # bevy_editor_pls = {git = "https://github.com/jakobhellermann/bevy_editor_pls"}
 bitflags = "*"
-bevy_xpbd_2d = "0.2.0"
+bevy_xpbd_2d = "0.3"
 rand = "*"
 toml = "*"
 # directories = "*"
