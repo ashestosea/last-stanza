@@ -179,7 +179,7 @@ fn mouse_input(
         return;
     };
 
-    for e in events.iter() {
+    for e in events.read() {
         let window_size = Vec2::new(window.width() as f32, window.height() as f32);
         let ndc = (e.position / window_size) * 2.0 - Vec2::ONE;
         let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix().inverse();
@@ -248,13 +248,13 @@ fn projectile_destruction(
 
 fn hit(
     mut state: ResMut<NextState<GameState>>,
-    mut time: ResMut<Time>,
+    // mut time: ResMut<Time>,
     query: Query<&CollidingEntities, With<Player>>,
 ) {
     for colliding_entities in query.iter() {
         if !colliding_entities.is_empty() {
             state.set(GameState::Menu);
-            time.pause();
+            // time.pause();
             return;
         }
     }

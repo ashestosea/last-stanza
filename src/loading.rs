@@ -10,12 +10,14 @@ impl Plugin for LoadingPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(TomlAssetPlugin::<TimeTable>::new(&["time.toml"]))
             .add_loading_state(
-                LoadingState::new(GameState::Loading).continue_to_state(GameState::Menu),
-            )
-            .add_collection_to_loading_state::<_, FontAssets>(GameState::Loading)
-            .add_collection_to_loading_state::<_, TextureAssets>(GameState::Loading)
-            .add_collection_to_loading_state::<_, GameData>(GameState::Loading);
-        // .add_collection_to_loading_state::<_, AudioAssets>(GameState::Loading)
+                LoadingState::new(GameState::Loading)
+                    .continue_to_state(GameState::Menu)
+                    .load_collection::<FontAssets>()
+                    .load_collection::<TextureAssets>()
+                    .load_collection::<GameData>()
+                    // .load_collection::<AudioAssets>()
+                    // .build(app)
+            );
     }
 }
 

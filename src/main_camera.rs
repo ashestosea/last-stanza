@@ -2,7 +2,7 @@ use crate::{
     enemies::{Explosion, Giant, Hop},
     GameState,
 };
-use bevy::{prelude::*, render::camera::*};
+use bevy::{prelude::*, render::{camera::*, view::VisibleEntities}};
 use rand::Rng;
 
 const CAM_POS: Vec3 = Vec3::new(0.0, 8.0, 0.0);
@@ -22,8 +22,18 @@ impl Plugin for MainCameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_camera).add_systems(
             Update,
-            (camera_shake, explosion_trauma, giant_steps).run_if(in_state(GameState::Playing)),
+            (debug_visible_entities, camera_shake, explosion_trauma, giant_steps).run_if(in_state(GameState::Playing)),
         );
+    }
+}
+
+fn debug_visible_entities(
+    entities_query: Query<&VisibleEntities>,
+) {
+    for cam in entities_query.iter() {
+        for blah in cam.iter() {
+            println!("{:?}", blah);
+        }
     }
 }
 
@@ -32,7 +42,7 @@ fn setup_camera(mut commands: Commands) {
         Camera2dBundle {
             transform: Transform::from_translation(CAM_POS),
             projection: OrthographicProjection {
-                scaling_mode: ScalingMode::FixedHorizontal(30.0),
+                scaling_mode: ScalingMode::FixedHorizontal(300.0),
                 ..Default::default()
             },
             ..Default::default()

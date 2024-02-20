@@ -4,8 +4,6 @@ use bevy_xpbd_2d::prelude::*;
 
 pub struct WorldPlugin;
 
-/// This plugin handles player related stuff like movement
-/// Player logic is only active during the State `GameState::Playing`
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Playing), spawn_world);

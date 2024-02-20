@@ -51,17 +51,17 @@ impl Plugin for GamePlugin {
     }
 }
 
-fn cleanup_far_entities(mut commands: Commands, query: Query<(Entity, &Transform)>) {
-    for (entity, transform) in query.iter() {
-        if transform.translation.x < -50.
-            || transform.translation.x > 50.
-            || transform.translation.y < -50.
-            || transform.translation.y > 50.
-        {
-            commands.entity(entity).despawn();
-        }
-    }
-}
+// fn cleanup_far_entities(mut commands: Commands, query: Query<(Entity, &Transform)>) {
+//     for (entity, transform) in query.iter() {
+//         if transform.translation.x < -50.
+//             || transform.translation.x > 50.
+//             || transform.translation.y < -50.
+//             || transform.translation.y > 50.
+//         {
+//             commands.entity(entity).despawn();
+//         }
+//     }
+// }
 
 #[derive(PhysicsLayer)]
 pub(crate) enum PhysicsLayers {

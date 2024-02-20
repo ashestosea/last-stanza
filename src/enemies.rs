@@ -195,7 +195,7 @@ fn update_enemy_spawns(
     mut spawn_change_ev: EventReader<EnemySpawnsChanged>,
     mut spawn_rates: ResMut<SpawnRates>,
 ) {
-    for e in spawn_change_ev.iter() {
+    for e in spawn_change_ev.read() {
         if let Some(val) = e.min_spawn_time {
             spawn_rates.min_spawn_time = Some(val as f32);
         }
