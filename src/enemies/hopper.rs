@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use crate::enemies::enemy_projectile::ProjectileSpawn;
 use crate::enemies::{Enemy, Explosion, ExplosionBundle, Facing, Hop};
 use crate::loading::TextureAssets;
@@ -8,13 +10,51 @@ use rand::Rng;
 
 use super::HopBundle;
 
-const COLLIDER_SHAPE: Vec2 = Vec2::new(2.0, 2.0);
-
 #[derive(Component, Default)]
 pub(crate) struct HopperSpawn;
 
 #[derive(Component, Default)]
-struct Hopper;
+struct Hopper {
+    pub collider_shape: Vec2,
+    pub power: Vec2,
+    pub spawn_point: Vec2,
+}
+
+impl Hopper {
+    fn new(facing: Facing) -> Self {
+        Self::new_all(
+            facing,
+            Vec2::new(2.0, 2.0),
+            1.0..2.0,
+            15.0..15.1,
+            16.0..16.01,
+            5.0..10.0,
+        )
+    }
+
+    fn new_all(
+        facing: Facing,
+        collider_shape: Vec2,
+        power_x: Range<f32>,
+        power_y: Range<f32>,
+        spawn_point_horz: Range<f32>,
+        spawn_point_vert: Range<f32>,
+    ) -> Self {
+        let facing_mul = f32::from(facing);
+        Self {
+            collider_shape,
+            power: Vec2::new(
+                rand::thread_rng().gen_range(power_x.start..power_x.end) * facing_mul,
+                rand::thread_rng().gen_range(power_y.start..power_y.end),
+            ),
+            spawn_point: Vec2::new(
+                rand::thread_rng().gen_range(spawn_point_horz.start..spawn_point_horz.end)
+                    * -facing_mul,
+                rand::thread_rng().gen_range(spawn_point_vert.start..spawn_point_vert.end),
+            ),
+        }
+    }
+}
 
 #[derive(Bundle, Default)]
 struct HopperBundle {
@@ -23,7 +63,7 @@ struct HopperBundle {
     enemy: Enemy,
     hopper: Hopper,
     hop: HopBundle,
-    external_force: ExternalForce,
+    external_impulse: ExternalImpulse,
 }
 
 pub struct HopperPlugin;
@@ -50,28 +90,22 @@ fn spawn(
         } else {
             Facing::Right
         };
-        let facing_mul: f32 = facing.into();
 
-        let power = Vec2::new(
-            rand::thread_rng().gen_range(1.0..2.0) * facing_mul,
-            rand::thread_rng().gen_range(15.0..15.01),
-        );
-
-        let height = rand::thread_rng().gen_range(5f32..10f32);
+        let hopper = Hopper::new(facing);
+        let collider = Collider::cuboid(hopper.collider_shape.x, hopper.collider_shape.y);
 
         commands.spawn(HopperBundle {
             sprite_bundle: SpriteSheetBundle {
                 texture_atlas: texture_assets.hopper.clone(),
-                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, height, 0.0)),
                 sprite: TextureAtlasSprite {
                     flip_x: facing.into(),
-                    custom_size: Some(COLLIDER_SHAPE),
+                    custom_size: Some(hopper.collider_shape),
                     ..default()
                 },
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
-                collider: Collider::cuboid(COLLIDER_SHAPE.x / 2.0, COLLIDER_SHAPE.y / 2.0),
+                collider: collider.clone(),
                 collision_layers: CollisionLayers::new(
                     [PhysicsLayers::Enemy, PhysicsLayers::Hopper],
                     [
@@ -82,39 +116,42 @@ fn spawn(
                         PhysicsLayers::Explosion,
                     ],
                 ),
-                friction: Friction::new(2.0),
-                restitution: Restitution::new(0.2),
+                friction: Friction::new(20.0),
+                // restitution: Restitution::new(0.2),
+                restitution: Restitution::new(0.0).with_combine_rule(CoefficientCombine::Multiply),
+                position: Position(hopper.spawn_point),
                 ..Default::default()
             },
             enemy: Enemy { health: 1, facing },
             hop: HopBundle {
                 hop: Hop {
                     grounded: false,
-                    power,
+                    power: hopper.power,
+                    hop_timer: Timer::from_seconds(0.5, TimerMode::Once),
+                    hop_reset_timer: Timer::from_seconds(1.0, TimerMode::Once),
                 },
-                ray: RayCaster::new(
+                shape_caster: ShapeCaster::new(
+                    collider,
                     Vec2 {
                         x: 0.0,
-                        y: -(COLLIDER_SHAPE.y / 2.0),
+                        y: -hopper.collider_shape.y,
+                        // y: 0.0
                     },
+                    0.0,
                     Vec2::NEG_Y,
                 )
-                .with_max_time_of_impact(0.1)
-                .with_query_filter(SpatialQueryFilter::new().with_masks_from_bits(
-                    PhysicsLayers::Ground.to_bits() | PhysicsLayers::Hopper.to_bits(),
-                )),
+                .with_max_time_of_impact(100.0)
+                .with_query_filter(SpatialQueryFilter::new().with_masks([PhysicsLayers::Ground])),
             },
             ..Default::default()
         });
     }
 }
 
-fn shoot(mut commands: Commands, query: Query<&Transform, With<Hopper>>) {
-    for t in query.iter() {
-        if rand::thread_rng().gen_range(0.0..1.0) > 0.999 && t.translation.x.abs() < 15.0 {
-            commands.spawn(ProjectileSpawn {
-                pos: t.translation.truncate(),
-            });
+fn shoot(mut commands: Commands, query: Query<&Position, With<Hopper>>) {
+    for pos in query.iter() {
+        if rand::thread_rng().gen_range(0.0..1.0) > 0.999 && pos.0.x.abs() < 15.0 {
+            commands.spawn(ProjectileSpawn { pos: pos.0.trunc() });
         }
     }
 }
@@ -133,10 +170,10 @@ fn animate(mut query: Query<(&mut TextureAtlasSprite, &LinearVelocity)>) {
 
 fn health(
     mut commands: Commands,
-    query: Query<(Entity, &Enemy, &Transform), (With<Hopper>, Changed<Enemy>)>,
+    query: Query<(Entity, &Enemy, &Position), (With<Hopper>, Changed<Enemy>)>,
     texture_assets: Res<TextureAssets>,
 ) {
-    for (entity, enemy, trans) in query.iter() {
+    for (entity, enemy, pos) in query.iter() {
         if enemy.health <= 0 {
             let _ = &commands.entity(entity).despawn();
 
@@ -151,10 +188,10 @@ fn health(
                         )),
                         ..Default::default()
                     },
-                    transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },
                 collider: Collider::ball(enemy.health.abs() as f32),
+                position: Position(pos.0),
                 explosion: Explosion {
                     power: enemy.health.abs(),
                     timer: Timer::from_seconds(0.5, TimerMode::Once),

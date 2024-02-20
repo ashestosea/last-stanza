@@ -36,9 +36,13 @@ fn setup_menu(
     commands
         .spawn(ButtonBundle {
             style: Style {
+                // top: Val::Percent(50.0),
+                left: Val::Percent(50.0),
                 width: Val::Px(120.0),
                 height: Val::Px(50.0),
-                margin: UiRect::all(Val::Auto),
+                // display: Display::Flex,
+                align_self: AlignSelf::Center,
+                // margin: UiRect::all(Val::Auto),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 ..Default::default()
@@ -52,7 +56,7 @@ fn setup_menu(
                     sections: vec![TextSection {
                         value: "Play".to_string(),
                         style: TextStyle {
-                            font: font_assets.fantasque_sans.clone(),
+                            font: font_assets.ui_font.clone(),
                             font_size: 40.0,
                             color: Color::rgb(0.9, 0.9, 0.9),
                         },
@@ -87,5 +91,5 @@ fn click_play_button(
 }
 
 fn cleanup_menu(mut commands: Commands, button: Query<Entity, With<Button>>) {
-    commands.entity(button.single()).despawn_recursive();
+    commands.entity(button.single()).despawn();
 }

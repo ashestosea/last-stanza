@@ -9,8 +9,20 @@ pub struct LoadingPlugin;
 impl Plugin for LoadingPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(TomlAssetPlugin::<TimeTable>::new(&["time.toml"]))
+            // .add_plugins(
+            //     ProgressPlugin::new(GameState::Loading).continue_to(GameState::Menu)
+            // )
+            // .add_systems(Update, print_state)
             .add_loading_state(
-                LoadingState::new(GameState::Loading).continue_to_state(GameState::Menu),
+                LoadingState::new(GameState::Loading).continue_to_state(GameState::Menu), // .on_failure_continue_to_state(GameState::LoadingFailed),
+            )
+            .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
+                GameState::Loading,
+                "fonts.assets.ron",
+            )
+            .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
+                GameState::Loading,
+                "textures.assets.ron",
             )
             .add_collection_to_loading_state::<_, FontAssets>(GameState::Loading)
             .add_collection_to_loading_state::<_, TextureAssets>(GameState::Loading)
@@ -21,8 +33,8 @@ impl Plugin for LoadingPlugin {
 
 #[derive(Resource, AssetCollection)]
 pub struct FontAssets {
-    #[asset(path = "fonts/FantasqueSansMono-Bold.ttf")]
-    pub fantasque_sans: Handle<Font>,
+    #[asset(key = "ui_font")]
+    pub ui_font: Handle<Font>,
 }
 
 // #[derive(AssetCollection)]
@@ -33,17 +45,15 @@ pub struct FontAssets {
 
 #[derive(Resource, AssetCollection)]
 pub struct TextureAssets {
-    #[asset(path = "textures/ground.png")]
+    #[asset(key = "ground")]
     pub ground: Handle<Image>,
-    #[asset(path = "textures/ziggurat.png")]
+    #[asset(key = "ziggurat")]
     pub ziggurat: Handle<Image>,
-    #[asset(path = "textures/circle.png")]
+    #[asset(key = "circle")]
     pub circle: Handle<Image>,
-    #[asset(texture_atlas(tile_size_x = 72.0, tile_size_y = 72.0, columns = 4, rows = 1))]
-    #[asset(path = "textures/hopper.png")]
+    #[asset(key = "hopper")]
     pub hopper: Handle<TextureAtlas>,
-    #[asset(texture_atlas(tile_size_x = 72.0, tile_size_y = 72.0, columns = 8, rows = 1))]
-    #[asset(path = "textures/explosion.png")]
+    #[asset(key = "explosion")]
     pub explosion: Handle<TextureAtlas>,
 }
 

@@ -52,7 +52,6 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
 
         commands.spawn(LurkerBundle {
             sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 3.0, 0.0)),
                 sprite: Sprite {
                     color: Color::PURPLE,
                     custom_size: Some(LURKER_SHAPE),
@@ -62,7 +61,7 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
             },
             dynamic_actor_bundle: DynamicActorBundle {
                 rigidbody: RigidBody::Dynamic,
-                collider: Collider::cuboid(LURKER_SHAPE.x / 2.0, LURKER_SHAPE.y / 2.0),
+                collider: Collider::cuboid(LURKER_SHAPE.x, LURKER_SHAPE.y),
                 collision_layers: CollisionLayers::new(
                     [PhysicsLayers::Enemy, PhysicsLayers::Lurker],
                     [
@@ -72,6 +71,7 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
                         PhysicsLayers::Explosion,
                     ],
                 ),
+                position: Position(Vec2::new(16.0 * -facing_mul, 3.0)),
                 friction: Friction::new(10.0),
                 restitution: Restitution::new(0.0),
                 ..Default::default()
@@ -102,10 +102,10 @@ fn lurk(mut query: Query<(&Enemy, &mut ExternalForce, &mut Lurker)>, time: Res<T
 
 fn health(
     mut commands: Commands,
-    query: Query<(Entity, &Enemy, &Transform), (With<Lurker>, Changed<Enemy>)>,
+    query: Query<(Entity, &Enemy, &Position), (With<Lurker>, Changed<Enemy>)>,
     texture_assets: Res<TextureAssets>,
 ) {
-    for (entity, enemy, trans) in query.iter() {
+    for (entity, enemy, pos) in query.iter() {
         if enemy.health <= 0 {
             let _ = &commands.entity(entity).despawn();
 
@@ -120,10 +120,10 @@ fn health(
                         )),
                         ..Default::default()
                     },
-                    transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },
                 collider: Collider::ball(enemy.health.abs() as f32),
+                position: Position(pos.0),
                 explosion: Explosion {
                     power: enemy.health.abs(),
                     timer: Timer::from_seconds(0.5, TimerMode::Once),

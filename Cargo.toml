@@ -21,13 +21,12 @@ bevy = { version = "0.11.0", default-features = false, features = [
 serde = "*"
 # bevy-inspector-egui = "0.12.1"
 # bevy_editor_pls = {git = "https://github.com/jakobhellermann/bevy_editor_pls"}
-bitflags = "*"
-bevy_xpbd_2d = "0.2.0"
+bevy_xpbd_2d = {git = "https://github.com/Jondolf/bevy_xpbd", branch = "main"}
 rand = "*"
 toml = "*"
 # directories = "*"
 # spew = "*"
-bevy_asset_loader = { version = "0.17.0", features = ["2d"] }
+bevy_asset_loader = { version = "0.17.0", features = ["2d", "standard_dynamic_assets"] }
 bevy_common_assets = { version = "0.7.0", features = ["toml"] }
 # bevy_tweening = "*"
 benimator = "*"

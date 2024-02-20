@@ -13,12 +13,15 @@ const CLIMBER_SHAPE: Vec2 = Vec2::new(1.0, 2.0);
 pub(crate) struct ClimberSpawn;
 
 #[derive(Component)]
-pub(crate) struct Climber;
+pub(crate) struct Climber {
+    climb_reset_timer: Timer,
+}
 
 #[derive(Bundle)]
 struct ClimberBundle {
     sprite_bundle: SpriteBundle,
     dynamic_actor_bundle: DynamicActorBundle,
+    external_impulse: ExternalImpulse,
     enemy: Enemy,
     climber: Climber,
 }
@@ -47,7 +50,6 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
 
         commands.spawn(ClimberBundle {
             sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 0.0, 0.0)),
                 sprite: Sprite {
                     color: Color::MIDNIGHT_BLUE,
                     custom_size: Some(CLIMBER_SHAPE),
@@ -57,7 +59,7 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
             },
             dynamic_actor_bundle: DynamicActorBundle {
                 rigidbody: RigidBody::Dynamic,
-                collider: Collider::cuboid(CLIMBER_SHAPE.x / 2.0, CLIMBER_SHAPE.y / 2.0),
+                collider: Collider::cuboid(CLIMBER_SHAPE.x, CLIMBER_SHAPE.y),
                 collision_layers: CollisionLayers::new(
                     [PhysicsLayers::Enemy, PhysicsLayers::Climber],
                     [
@@ -70,41 +72,63 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
                 ),
                 friction: Friction::ZERO,
                 restitution: Restitution::ZERO,
+                position: Position(Vec2::new(16.0 * -facing_mul, CLIMBER_SHAPE.y / 2.0)),
                 velocity: LinearVelocity(Vec2::new(facing_mul * 2.0, 0.0)),
                 ..Default::default()
             },
+            external_impulse: Default::default(),
             enemy: Enemy { health: 1, facing },
-            climber: Climber,
+            climber: Climber {
+                climb_reset_timer: Timer::from_seconds(1.0, TimerMode::Once),
+            },
         });
     }
 }
 
 fn climb(
-    mut query: Query<(&mut LinearVelocity, &CollidingEntities, &Enemy), With<Climber>>,
+    mut query: Query<(
+        &mut ExternalImpulse,
+        &CollidingEntities,
+        &Enemy,
+        &mut Climber,
+    )>,
     sensor_query: Query<(Entity, &CollisionLayers), With<Sensor>>,
+    time: Res<Time>,
+    evt_reader: EventReader<CollisionStarted>
 ) {
-    for (mut velocity, colliding_entities, enemy) in query.iter_mut() {
-        for e in colliding_entities.iter() {
-            for (entity, collision_layers) in sensor_query.iter() {
-                if e == &entity {
-                    if collision_layers.contains_group(PhysicsLayers::CliffEdge) {
-                        let mul: f32 = enemy.facing.into();
-                        velocity.x = 1.0 * mul;
-                        velocity.y = 9.0;
-                        return;
+    // for event in evt_reader.iter() {
+        // event.0.type
+    // }
+    
+    
+    for (mut imp, colliding_entities, enemy, mut climber) in query.iter_mut() {
+        if climber.climb_reset_timer.finished() {
+            climber.climb_reset_timer.reset();
+            for e in colliding_entities.iter() {
+                for (entity, collision_layers) in sensor_query.iter() {
+                    if e == &entity {
+                        dbg!(collision_layers);
+                        if collision_layers.contains_group(PhysicsLayers::CliffEdge) {
+                            let mul: f32 = enemy.facing.into();
+                            imp.set_impulse(Vec2::new(10.0 * mul, 8000.0));
+                            dbg!(imp);
+                            return;
+                        }
                     }
                 }
             }
+        } else {
+            climber.climb_reset_timer.tick(time.delta());
         }
     }
 }
 
 fn health(
     mut commands: Commands,
-    query: Query<(Entity, &Enemy, &Transform), (With<Climber>, Changed<Enemy>)>,
+    query: Query<(Entity, &Enemy, &Position), (With<Climber>, Changed<Enemy>)>,
     texture_assets: Res<TextureAssets>,
 ) {
-    for (entity, enemy, trans) in query.iter() {
+    for (entity, enemy, pos) in query.iter() {
         if enemy.health <= 0 {
             let _ = &commands.entity(entity).despawn();
 
@@ -119,9 +143,9 @@ fn health(
                         )),
                         ..Default::default()
                     },
-                    transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },
+                position: Position(pos.0),
                 collider: Collider::ball(enemy.health.abs() as f32),
                 explosion: Explosion {
                     power: enemy.health.abs(),

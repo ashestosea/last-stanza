@@ -9,7 +9,6 @@ use std::time::Duration;
 pub use crate::enemies::giant::Giant;
 use crate::events::EnemySpawnsChanged;
 use crate::player::PlayerProjectile;
-use crate::world::Ground;
 use crate::{GameState, PhysicsLayers};
 use benimator::FrameRate;
 use bevy::prelude::*;
@@ -71,6 +70,7 @@ struct ExplosionBundle {
     rigidbody: RigidBody,
     collider: Collider,
     collision_layers: CollisionLayers,
+    position: Position,
     sensor: Sensor,
     animation: ExplosionAnimation,
     animation_state: ExplosionAnimationState,
@@ -87,7 +87,8 @@ impl Default for ExplosionBundle {
                 [PhysicsLayers::Explosion],
                 [PhysicsLayers::Enemy],
             ),
-            sensor: Sensor::default(),
+            position: Default::default(),
+            sensor: Default::default(),
             animation: ExplosionAnimation(benimator::Animation::from_indices(
                 0..=8,
                 FrameRate::from_fps(16.0),
@@ -118,13 +119,15 @@ struct Behemoth;
 #[derive(Component, Default)]
 pub(crate) struct Hop {
     pub grounded: bool,
+    pub hop_timer: Timer,
+    pub hop_reset_timer: Timer,
     pub power: Vec2,
 }
 
 #[derive(Bundle, Default)]
 pub(crate) struct HopBundle {
     pub hop: Hop,
-    pub ray: RayCaster,
+    pub shape_caster: ShapeCaster,
 }
 
 #[derive(Resource)]
@@ -175,7 +178,7 @@ impl Plugin for EnemiesPlugin {
             )
             .init_resource::<SpawnRates>()
             .insert_resource(SpawnTimer {
-                timer: Timer::from_seconds(1.0, TimerMode::Repeating),
+                timer: Timer::from_seconds(2.0, TimerMode::Repeating),
             })
             .add_plugins(HopperPlugin)
             .add_plugins(ClimberPlugin)
@@ -273,35 +276,45 @@ fn enemy_spawner(
 }
 
 fn hop(
-    mut query: Query<(
-        &Enemy,
-        &LinearVelocity,
-        &mut ExternalForce,
-        &CollidingEntities,
-        &Hop,
-    )>,
+    mut query: Query<(&Enemy, &LinearVelocity, &mut ExternalImpulse, &mut Hop)>,
+    time: Res<Time>,
 ) {
-    for (enemy, vel, mut force, colliding_entities, hop) in query.iter_mut() {
-        if hop.grounded {
-            force.set_force(hop.power);
-        } else if colliding_entities.is_empty() {
-            // Nudge Hopping actor if it's stalled out
-            if vel.x.abs() < 0.1 && vel.y.abs() < 0.1 {
-                let mul: f32 = enemy.facing.into();
-                force.set_force(Vec2::X * 2.0 * mul);
+    for (enemy, vel, mut impulse, mut hop) in query.iter_mut() {
+        if hop.hop_reset_timer.finished() {
+            if hop.grounded {
+                if hop.hop_timer.finished() {
+                    hop.hop_timer.reset();
+                    hop.hop_reset_timer.reset();
+                    impulse.apply_impulse(hop.power);
+                    // vel.x += hop.power.x;
+                    // vel.y += hop.power.y;
+                    hop.grounded = false;
+                    println!("{:?}", impulse);
+                } else {
+                    hop.hop_timer.tick(time.delta());
+                }
             }
+        } else {
+            hop.hop_reset_timer.tick(time.delta());
         }
+
+        // if colliding_entities.is_empty() {
+        // Nudge Hopping actor if it's stalled out
+        if vel.x.abs() < 0.1 && vel.y.abs() < 0.1 {
+            let mul: f32 = enemy.facing.into();
+            impulse.apply_impulse(Vec2::X * 20.0 * mul);
+        }
+        // }
     }
 }
 
-fn hop_grounding(
-    mut query: Query<(&mut Hop, &RayHits)>,
-    ground_query: Query<Entity, With<Ground>>,
-) {
-    for (mut hop, hits) in query.iter_mut() {
-        for hit in hits.iter_sorted() {
-            if hit.normal == Vec2::Y && ground_query.contains(hit.entity) {
+fn hop_grounding(mut query: Query<(&mut Hop, &mut LinearVelocity, &RayHits)>) {
+    for (mut hop, mut vel, hits) in query.iter_mut() {
+        for hit in hits.iter() {
+            if hit.normal == Vec2::Y {
+                println!("hop grounded");
                 hop.grounded = true;
+                vel.0 = Vec2::ZERO;
                 return;
             }
         }

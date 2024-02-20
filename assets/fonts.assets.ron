@@ -1,0 +1,5 @@
+({
+    "ui_font": File (
+        path: "fonts/FantasqueSansMono-Bold.ttf",
+    ),
+})

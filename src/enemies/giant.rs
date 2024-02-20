@@ -53,9 +53,10 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
             rand::thread_rng().gen_range(50.5..55.0),
         );
 
+        let collider = Collider::cuboid(COLLIDER_SHAPE.x, COLLIDER_SHAPE.y);
+
         commands.spawn(GiantBundle {
             sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 6.0, 0.0)),
                 sprite: Sprite {
                     color: Color::BLUE,
                     custom_size: Some(COLLIDER_SHAPE),
@@ -64,7 +65,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
-                collider: Collider::cuboid(COLLIDER_SHAPE.x / 2.0, COLLIDER_SHAPE.y / 2.0),
+                collider: collider.clone(),
                 collision_layers: CollisionLayers::new(
                     [PhysicsLayers::Enemy, PhysicsLayers::Giant],
                     [
@@ -75,6 +76,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                 ),
                 friction: Friction::new(2.0),
                 restitution: Restitution::new(0.2),
+                position: Position(Vec2::new(16.0 * -facing_mul, 6.0)),
                 ..Default::default()
             },
             enemy: Enemy { health: 20, facing },
@@ -82,12 +84,16 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                 hop: Hop {
                     grounded: false,
                     power,
+                    hop_timer: Timer::from_seconds(0.5, TimerMode::Once),
+                    hop_reset_timer: Timer::from_seconds(1.0, TimerMode::Once),
                 },
-                ray: RayCaster::new(
+                shape_caster: ShapeCaster::new(
+                    collider,
                     Vec2 {
                         x: 0.0,
                         y: -(COLLIDER_SHAPE.y / 2.0),
                     },
+                    0.0,
                     Vec2::NEG_Y,
                 )
                 .with_max_time_of_impact(0.1)
@@ -119,10 +125,10 @@ fn hit(
 
 fn health(
     mut commands: Commands,
-    query: Query<(Entity, &Enemy, &Transform), (With<Giant>, Changed<Enemy>)>,
+    query: Query<(Entity, &Enemy, &Position), (With<Giant>, Changed<Enemy>)>,
     texture_assets: Res<TextureAssets>,
 ) {
-    for (entity, enemy, trans) in query.iter() {
+    for (entity, enemy, pos) in query.iter() {
         if enemy.health <= 0 {
             let _ = &commands.entity(entity).despawn();
 
@@ -137,10 +143,10 @@ fn health(
                         )),
                         ..Default::default()
                     },
-                    transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },
                 collider: Collider::ball(enemy.health.abs() as f32),
+                position: Position(pos.0),
                 explosion: Explosion {
                     power: enemy.health.abs(),
                     timer: Timer::from_seconds(0.5, TimerMode::Once),

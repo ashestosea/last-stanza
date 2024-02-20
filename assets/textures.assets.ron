@@ -1,0 +1,25 @@
+({
+    "ground": File (
+        path: "textures/ground.png",
+    ),
+    "ziggurat": File (
+        path: "textures/ziggurat.png",
+    ),
+    "circle": File (
+        path: "textures/circle.png",
+    ),
+    "hopper": TextureAtlas (
+        path: "textures/hopper.png",
+        tile_size_x: 72.0,
+        tile_size_y: 72.0,
+        columns: 4,
+        rows: 1,
+    ),
+    "explosion": TextureAtlas (
+        path: "textures/explosion.png",
+        tile_size_x: 72.0,
+        tile_size_y: 72.0,
+        columns: 8,
+        rows: 1,
+    ),
+})

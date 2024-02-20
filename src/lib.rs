@@ -18,10 +18,11 @@ use bevy::app::App;
 use bevy::prelude::*;
 use bevy_xpbd_2d::prelude::*;
 
-#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States, SystemSet)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
 enum GameState {
     #[default]
     Loading,
+    LoadingFailed,
     Menu,
     Playing,
 }
@@ -39,10 +40,12 @@ impl Plugin for GamePlugin {
             .add_plugins(PlayerPlugin)
             .add_plugins(EnemiesPlugin)
             .add_plugins(PhysicsPlugins::default())
-            // .add_systems(Update, cleanup_far_entities.run_if(in_state(GameState::Playing)))
-        // .insert_resource(Gravity::from(Vec2::new(0.0, -9.81)));
-        ;
-
+            .add_systems(OnEnter(GameState::LoadingFailed), asset_loading_failure)
+            .add_systems(
+                Update,
+                cleanup_far_entities.run_if(in_state(GameState::Playing)),
+            )
+            .insert_resource(Gravity(Vec2::new(0.0, -15.0)));
         // #[cfg(debug_assertions)]
         // {
         //     app.add_plugins(FrameTimeDiagnosticsPlugin::default())
@@ -51,13 +54,13 @@ impl Plugin for GamePlugin {
     }
 }
 
-fn cleanup_far_entities(mut commands: Commands, query: Query<(Entity, &Transform)>) {
-    for (entity, transform) in query.iter() {
-        if transform.translation.x < -50.
-            || transform.translation.x > 50.
-            || transform.translation.y < -50.
-            || transform.translation.y > 50.
-        {
+fn asset_loading_failure() {
+    panic!("Asset loading failed");
+}
+
+fn cleanup_far_entities(mut commands: Commands, query: Query<(Entity, &Position)>) {
+    for (entity, pos) in query.iter() {
+        if pos.0.x < -50.0 || pos.0.x > 50.0 || pos.0.y < -50.0 || pos.0.y > 50.0 {
             commands.entity(entity).despawn();
         }
     }
@@ -87,10 +90,10 @@ struct DynamicActorBundle {
     locked_axes: LockedAxes,
     collider: Collider,
     collision_layers: CollisionLayers,
-    colliding_entities: CollidingEntities,
     friction: Friction,
     restitution: Restitution,
     mass: Mass,
+    position: Position,
     velocity: LinearVelocity,
 }
 
@@ -101,10 +104,10 @@ impl Default for DynamicActorBundle {
             locked_axes: LockedAxes::ROTATION_LOCKED,
             collider: Default::default(),
             collision_layers: Default::default(),
-            colliding_entities: Default::default(),
             friction: Default::default(),
             restitution: Default::default(),
             mass: Mass(500.0),
+            position: Default::default(),
             velocity: Default::default(),
         }
     }

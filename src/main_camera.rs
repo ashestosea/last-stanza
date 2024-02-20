@@ -5,7 +5,7 @@ use crate::{
 use bevy::{prelude::*, render::camera::*};
 use rand::Rng;
 
-const CAM_POS: Vec3 = Vec3::new(0.0, 8.0, 0.0);
+const CAM_POS: Vec3 = Vec3::new(0.0, 8.0, 1.0);
 
 #[derive(Component)]
 pub struct MainCamera;
@@ -32,7 +32,8 @@ fn setup_camera(mut commands: Commands) {
         Camera2dBundle {
             transform: Transform::from_translation(CAM_POS),
             projection: OrthographicProjection {
-                scaling_mode: ScalingMode::FixedHorizontal(30.0),
+                // scaling_mode: ScalingMode::FixedHorizontal(30.0),
+                scaling_mode: ScalingMode::FixedHorizontal(300.0),
                 ..Default::default()
             },
             ..Default::default()

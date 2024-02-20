@@ -7,8 +7,10 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use bevy_xpbd_2d::prelude::*;
 
+// pub const PLAYER_CENTER: Vec2 = Vec2::new(0.0, 10.0);
 pub const PLAYER_CENTER: Vec2 = Vec2::new(0.0, 8.75);
 pub const PLAYER_SIZE: Vec2 = Vec2::new(0.75, 1.5);
+const PROJ_BASE_SIZE: Vec2 = Vec2::new(0.25, 0.25);
 
 pub struct PlayerPlugin;
 
@@ -62,71 +64,74 @@ struct MouseData {
 }
 
 fn spawn_player(mut commands: Commands) {
-    commands
-        .spawn(SpriteBundle {
+    commands.spawn((
+        SpriteBundle {
             // texture: textures.texture_bevy.clone(),
             sprite: Sprite {
                 color: Color::RED,
                 custom_size: Some(PLAYER_SIZE),
                 ..Default::default()
             },
-            transform: Transform::from_translation(PLAYER_CENTER.extend(0.0)),
             ..Default::default()
-        })
-        .insert(Player)
-        .insert(RigidBody::Static)
-        .insert(Collider::cuboid(PLAYER_SIZE.x / 2.0, PLAYER_SIZE.y / 2.0))
-        .insert(CollidingEntities::default())
-        .insert(CollisionLayers::new(
+        },
+        Player,
+        RigidBody::Static,
+        Collider::cuboid(PLAYER_SIZE.x, PLAYER_SIZE.y),
+        CollisionLayers::new(
             [PhysicsLayers::Player],
             [PhysicsLayers::Enemy, PhysicsLayers::EnemyProj],
-        ));
+        ),
+        Position(PLAYER_CENTER),
+    ));
 }
 
 fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>) -> Entity {
     let entity = &commands
-        .spawn(SpriteBundle {
-            texture: texture_assets.circle.clone(),
-            sprite: Sprite {
-                custom_size: Some(Vec2::ONE),
-                color: Color::GREEN,
+        .spawn((
+            SpriteBundle {
+                texture: texture_assets.circle.clone(),
+                sprite: Sprite {
+                    custom_size: Some(PROJ_BASE_SIZE),
+                    color: Color::GREEN,
+                    ..Default::default()
+                },
                 ..Default::default()
             },
-            transform: Transform::from_translation(Vec3::new(-10.0, 45.0, 0.0)),
-            ..Default::default()
-        })
-        .insert(PlayerProjectile { size: 1 })
-        .insert(DynamicActorBundle {
-            rigidbody: RigidBody::Static,
-            locked_axes: LockedAxes::ROTATION_LOCKED,
-            collider: Collider::ball(0.5),
-            collision_layers: CollisionLayers::new(
-                [PhysicsLayers::PlayerProj],
-                [
-                    PhysicsLayers::Ground,
-                    PhysicsLayers::Enemy,
-                    PhysicsLayers::EnemyProj,
-                ],
-            ),
-            friction: Friction {
-                static_coefficient: 0.0,
-                dynamic_coefficient: 0.0,
-                combine_rule: CoefficientCombine::Min,
+            PlayerProjectile { size: 1 },
+            DynamicActorBundle {
+                rigidbody: RigidBody::Kinematic,
+                locked_axes: LockedAxes::ROTATION_LOCKED,
+                collider: Collider::ball(0.5),
+                collision_layers: CollisionLayers::new(
+                    [PhysicsLayers::PlayerProj],
+                    [
+                        PhysicsLayers::Ground,
+                        PhysicsLayers::Enemy,
+                        PhysicsLayers::EnemyProj,
+                    ],
+                ),
+                friction: Friction {
+                    static_coefficient: 0.0,
+                    dynamic_coefficient: 0.0,
+                    combine_rule: CoefficientCombine::Min,
+                },
+                restitution: Restitution {
+                    coefficient: 2.0,
+                    combine_rule: Default::default(),
+                },
+                mass: Mass(100.0),
+                position: Position(Vec2::new(-10.0, 45.0)),
+                ..Default::default()
             },
-            restitution: Restitution {
-                coefficient: 2.0,
-                combine_rule: Default::default(),
+            Timeout {
+                timer: Timer::from_seconds(3.0, TimerMode::Once),
             },
-            mass: Mass(100.0),
-            ..Default::default()
-        })
-        .insert(Timeout {
-            timer: Timer::from_seconds(3.0, TimerMode::Once),
-        })
-        .insert(Charging {
-            timer: Timer::from_seconds(10.0, TimerMode::Repeating),
-        })
-        .insert(GravityScale { 0: 3.0 })
+            Charging {
+                timer: Timer::from_seconds(10.0, TimerMode::Repeating),
+            },
+            Sleeping,
+            GravityScale { 0: 3.0 },
+        ))
         .id();
 
     return *entity;
@@ -135,14 +140,21 @@ fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>)
 fn aim(
     time: Res<Time>,
     mouse_data: Res<MouseData>,
-    mut proj_query: Query<(&mut PlayerProjectile, &mut Transform, &mut Charging)>,
+    mut proj_query: Query<(
+        &mut PlayerProjectile,
+        &mut Position,
+        &mut Collider,
+        &mut Charging,
+        &mut Sprite,
+    )>,
 ) {
-    for (mut proj, mut proj_trans, mut charge) in proj_query.iter_mut() {
+    for (mut proj, mut pos, mut collider, mut charge, mut sprite) in proj_query.iter_mut() {
         charge.timer.tick(time.delta());
-        let c = (charge.timer.elapsed_secs().sin().powi(2) * 4.0) + 1.0;
-        proj.size = c.round() as i32;
-        proj_trans.scale = Vec3::ONE * (0.5 + (0.05 * proj.size as f32));
-        proj_trans.translation = (2.0 * mouse_data.vec_from_player + PLAYER_CENTER).extend(0.0);
+        let c = ((charge.timer.elapsed_secs().sin().powi(2) * 4.0) + 1.0).round();
+        proj.size = c as i32;
+        sprite.custom_size = Some(PROJ_BASE_SIZE * c);
+        collider.make_mut().as_ball_mut().unwrap().radius = 0.5 + (0.05 * c);
+        pos.0 = 2.0 * mouse_data.vec_from_player + PLAYER_CENTER;
     }
 }
 
@@ -190,12 +202,13 @@ fn mouse_input(
     let b = (mouse_data.world_pos - PLAYER_CENTER).normalize();
     let mut angle = ((a.x * b.x) + (a.y * b.y)).acos();
     let cross = (a.x * b.y) - (a.y * b.x);
+    // let cross = -1f32;
 
-    if cross < 0.0 {
+    if cross > 0.0 {
         angle *= -1.0;
     }
 
-    mouse_data.vec_from_player = Vec2::from_angle(angle).rotate(Vec2::Y).normalize();
+    mouse_data.vec_from_player = Vec2::from_angle(angle).rotate(-Vec2::Y).normalize();
 
     if input.just_pressed(MouseButton::Left) {
         spawn_projectile(&mut commands, texture_assets);
