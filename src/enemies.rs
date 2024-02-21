@@ -374,7 +374,7 @@ fn explosion_cleanup(
 ) {
     for (entity, mut explosion) in query.iter_mut() {
         explosion.timer.tick(time.delta());
-        commands.entity(entity).insert(Collider::ball(0.0));
+        commands.entity(entity).insert(Collider::circle(0.0));
 
         if explosion.timer.finished() {
             commands.entity(entity).despawn();

@@ -75,7 +75,7 @@ fn spawn_player(mut commands: Commands) {
         })
         .insert(Player)
         .insert(RigidBody::Static)
-        .insert(Collider::cuboid(PLAYER_SIZE.x / 2.0, PLAYER_SIZE.y / 2.0))
+        .insert(Collider::rectangle(PLAYER_SIZE.x / 2.0, PLAYER_SIZE.y / 2.0))
         .insert(CollidingEntities::default())
         .insert(CollisionLayers::new(
             [PhysicsLayers::Player],
@@ -99,7 +99,7 @@ fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>)
         .insert(DynamicActorBundle {
             rigidbody: RigidBody::Static,
             locked_axes: LockedAxes::ROTATION_LOCKED,
-            collider: Collider::ball(0.5),
+            collider: Collider::circle(0.5),
             collision_layers: CollisionLayers::new(
                 [PhysicsLayers::PlayerProj],
                 [

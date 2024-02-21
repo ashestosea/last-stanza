@@ -65,7 +65,7 @@ fn spawn(
                     },
                     dynamic_actor_bundle: DynamicActorBundle {
                         rigidbody: RigidBody::Static,
-                        collider: Collider::ball(0.3),
+                        collider: Collider::circle(0.3),
                         collision_layers: CollisionLayers::new(
                             [PhysicsLayers::Enemy, PhysicsLayers::EnemyProj],
                             [

@@ -62,7 +62,7 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
             },
             dynamic_actor_bundle: DynamicActorBundle {
                 rigidbody: RigidBody::Dynamic,
-                collider: Collider::cuboid(LURKER_SHAPE.x / 2.0, LURKER_SHAPE.y / 2.0),
+                collider: Collider::rectangle(LURKER_SHAPE.x / 2.0, LURKER_SHAPE.y / 2.0),
                 collision_layers: CollisionLayers::new(
                     [PhysicsLayers::Enemy, PhysicsLayers::Lurker],
                     [
@@ -127,7 +127,7 @@ fn health(
                     transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },
-                collider: Collider::ball(enemy.health.abs() as f32),
+                collider: Collider::circle(enemy.health.abs() as f32),
                 explosion: Explosion {
                     power: enemy.health.abs(),
                     timer: Timer::from_seconds(0.5, TimerMode::Once),

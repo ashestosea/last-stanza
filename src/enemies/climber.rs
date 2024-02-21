@@ -57,7 +57,7 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
             },
             dynamic_actor_bundle: DynamicActorBundle {
                 rigidbody: RigidBody::Dynamic,
-                collider: Collider::cuboid(CLIMBER_SHAPE.x / 2.0, CLIMBER_SHAPE.y / 2.0),
+                collider: Collider::rectangle(CLIMBER_SHAPE.x / 2.0, CLIMBER_SHAPE.y / 2.0),
                 collision_layers: CollisionLayers::new(
                     [PhysicsLayers::Enemy, PhysicsLayers::Climber],
                     [
@@ -126,7 +126,7 @@ fn health(
                     transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },
-                collider: Collider::ball(enemy.health.abs() as f32),
+                collider: Collider::circle(enemy.health.abs() as f32),
                 explosion: Explosion {
                     power: enemy.health.abs(),
                     timer: Timer::from_seconds(0.5, TimerMode::Once),
