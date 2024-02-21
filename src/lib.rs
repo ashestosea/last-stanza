@@ -30,7 +30,7 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<GameState>()
+        app.init_state::<GameState>()
             .add_plugins(LoadingPlugin)
             .add_plugins(EventsPlugin)
             .add_plugins(MainCameraPlugin)
