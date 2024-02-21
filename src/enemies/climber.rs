@@ -87,7 +87,7 @@ fn climb(
         for e in colliding_entities.iter() {
             for (entity, collision_layers) in sensor_query.iter() {
                 if e == &entity {
-                    if collision_layers.contains_group(PhysicsLayers::CliffEdge) {
+                    if collision_layers.memberships.has_all /*.contains_group*/(PhysicsLayers::CliffEdge) {
                         let mul: f32 = enemy.facing.into();
                         velocity.x = 1.0 * mul;
                         velocity.y = 9.0;

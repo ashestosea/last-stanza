@@ -88,10 +88,10 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                         x: 0.0,
                         y: -(COLLIDER_SHAPE.y / 2.0),
                     },
-                    Vec2::NEG_Y,
+                    Direction2d::NEG_Y,
                 )
                 .with_max_time_of_impact(0.1)
-                .with_query_filter(SpatialQueryFilter::new().with_masks_from_bits(
+                .with_query_filter(SpatialQueryFilter::from_mask(
                     PhysicsLayers::Ground.to_bits() | PhysicsLayers::Hopper.to_bits(),
                 )),
             },
