@@ -57,7 +57,7 @@ fn setup_menu(
                             color: Color::rgb(0.9, 0.9, 0.9),
                         },
                     }],
-                    alignment: TextAlignment::Center,
+                    justify: JustifyText::Center,
                     ..Default::default()
                 },
                 ..Default::default()
