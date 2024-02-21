@@ -61,13 +61,17 @@ fn spawn(
 
         commands.spawn(HopperBundle {
             sprite_bundle: SpriteSheetBundle {
-                texture_atlas: texture_assets.hopper.clone(),
-                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, height, 0.0)),
-                sprite: TextureAtlasSprite {
+                atlas: TextureAtlas {
+                    layout: texture_assets.hopper_layout.clone(),
+                    index: 0,
+                },
+                sprite: Sprite {
                     flip_x: facing.into(),
                     custom_size: Some(COLLIDER_SHAPE),
                     ..default()
                 },
+                texture: texture_assets.hopper.clone(),
+                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, height, 0.0)),
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
@@ -119,7 +123,7 @@ fn shoot(mut commands: Commands, query: Query<&Transform, With<Hopper>>) {
     }
 }
 
-fn animate(mut query: Query<(&mut TextureAtlasSprite, &LinearVelocity)>) {
+fn animate(mut query: Query<(&mut TextureAtlas, &LinearVelocity)>) {
     for (mut texture, velocity) in query.iter_mut() {
         if velocity.y > 0.2 {
             texture.index = 0;
@@ -143,14 +147,18 @@ fn health(
             // Spawn Explosion
             commands.spawn(ExplosionBundle {
                 sprite_bundle: SpriteSheetBundle {
-                    texture_atlas: texture_assets.explosion.clone(),
-                    sprite: TextureAtlasSprite {
+                    atlas: TextureAtlas {
+                        layout: texture_assets.explosion_layout.clone(),
+                        index: 0,
+                    },
+                    sprite: Sprite {
                         custom_size: Some(Vec2::new(
                             enemy.health.abs() as f32 * 2.0,
                             enemy.health.abs() as f32 * 2.0,
                         )),
                         ..Default::default()
                     },
+                    texture: texture_assets.explosion.clone(),
                     transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },

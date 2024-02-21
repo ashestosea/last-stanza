@@ -93,7 +93,7 @@ fn projectile_destruction(
     }
 }
 
-fn animate(mut query: Query<(&mut TextureAtlasSprite, &LinearVelocity)>) {
+fn animate(mut query: Query<(&mut TextureAtlas, &LinearVelocity)>) {
     for (mut texture, velocity) in query.iter_mut() {
         if velocity.y > 0.2 {
             texture.index = 0;

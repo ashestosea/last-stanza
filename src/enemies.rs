@@ -354,7 +354,7 @@ fn explosion_animate(
     time: Res<Time>,
     mut query: Query<(
         &mut ExplosionAnimationState,
-        &mut TextureAtlasSprite,
+        &mut TextureAtlas,
         &ExplosionAnimation,
     )>,
 ) {

@@ -52,12 +52,12 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
 
         commands.spawn(LurkerBundle {
             sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 3.0, 0.0)),
                 sprite: Sprite {
                     color: Color::PURPLE,
                     custom_size: Some(LURKER_SHAPE),
                     ..default()
                 },
+                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 3.0, 0.0)),
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
@@ -112,14 +112,18 @@ fn health(
             // Spawn Explosion
             commands.spawn(ExplosionBundle {
                 sprite_bundle: SpriteSheetBundle {
-                    texture_atlas: texture_assets.explosion.clone(),
-                    sprite: TextureAtlasSprite {
+                    atlas: TextureAtlas {
+                        layout: texture_assets.explosion_layout.clone(),
+                        index: 0,
+                    },
+                    sprite: Sprite {
                         custom_size: Some(Vec2::new(
                             enemy.health.abs() as f32 * 2.0,
                             enemy.health.abs() as f32 * 2.0,
                         )),
                         ..Default::default()
                     },
+                    texture: texture_assets.explosion.clone(),
                     transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },
