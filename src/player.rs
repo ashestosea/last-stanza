@@ -165,7 +165,7 @@ fn launch(
 
 fn mouse_input(
     primary_window_query: Query<&Window, With<PrimaryWindow>>,
-    input: Res<Input<MouseButton>>,
+    input: Res<ButtonInput<MouseButton>>,
     cam_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     proj_query: Query<Entity, (With<PlayerProjectile>, With<Charging>)>,
     texture_assets: Res<TextureAssets>,
