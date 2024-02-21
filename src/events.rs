@@ -1,7 +1,7 @@
 use crate::{enemies::SpawnRates, loading::GameData, GameState};
 use bevy::{
     prelude::*,
-    reflect::{TypePath, TypeUuid},
+    reflect::TypePath,
     time::Stopwatch,
     utils::HashMap,
 };
@@ -28,8 +28,8 @@ pub struct EnemySpawnsChanged {
     pub behemoth: Option<f32>,
 }
 
-#[derive(serde::Deserialize, TypeUuid, Clone, TypePath, Asset)]
-#[uuid = "c2609287-9672-4cb8-b95d-afb0a8df2200"]
+#[derive(serde::Deserialize, Clone, TypePath, Asset)]
+// #[uuid = "c2609287-9672-4cb8-b95d-afb0a8df2200"]
 pub struct TimeTable {
     pub t: toml::value::Table,
 }
