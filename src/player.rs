@@ -129,10 +129,10 @@ fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>)
         .insert(Charging {
             timer: Timer::from_seconds(10.0, TimerMode::Repeating),
         })
-        .insert(GravityScale { 0: 3.0 })
+        .insert(GravityScale(3.0))
         .id();
 
-    return *entity;
+    *entity
 }
 
 fn aim(

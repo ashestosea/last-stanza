@@ -87,7 +87,7 @@ impl Default for ExplosionBundle {
                 [PhysicsLayers::Explosion],
                 [PhysicsLayers::Enemy],
             ),
-            sensor: Sensor::default(),
+            sensor: Sensor,
             animation: ExplosionAnimation(benimator::Animation::from_indices(
                 0..=8,
                 FrameRate::from_fps(16.0),
@@ -197,28 +197,28 @@ fn update_enemy_spawns(
 ) {
     for e in spawn_change_ev.read() {
         if let Some(val) = e.min_spawn_time {
-            spawn_rates.min_spawn_time = Some(val as f32);
+            spawn_rates.min_spawn_time = Some(val);
         }
         if let Some(val) = e.max_spawn_time {
-            spawn_rates.max_spawn_time = Some(val as f32);
+            spawn_rates.max_spawn_time = Some(val);
         }
         if let Some(val) = e.hopper {
-            spawn_rates.hopper = Some(val as f32);
+            spawn_rates.hopper = Some(val);
         }
         if let Some(val) = e.climber {
-            spawn_rates.climber = Some(val as f32);
+            spawn_rates.climber = Some(val);
         }
         if let Some(val) = e.lurker {
-            spawn_rates.lurker = Some(val as f32);
+            spawn_rates.lurker = Some(val);
         }
         if let Some(val) = e.diver {
-            spawn_rates.diver = Some(val as f32);
+            spawn_rates.diver = Some(val);
         }
         if let Some(val) = e.giant {
-            spawn_rates.giant = Some(val as f32);
+            spawn_rates.giant = Some(val);
         }
         if let Some(val) = e.behemoth {
-            spawn_rates.behemoth = Some(val as f32);
+            spawn_rates.behemoth = Some(val);
         }
     }
 }
