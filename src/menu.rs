@@ -73,17 +73,19 @@ fn click_play_button(
         (Changed<Interaction>, With<Button>),
     >,
 ) {
-    interaction_query.iter_mut().for_each(|(interaction, mut color)| match *interaction {
-        Interaction::Pressed => {
-            state.set(GameState::Playing);
-        }
-        Interaction::Hovered => {
-            *color = button_colors.hovered;
-        }
-        Interaction::None => {
-            *color = button_colors.normal;
-        }
-    });
+    interaction_query
+        .iter_mut()
+        .for_each(|(interaction, mut color)| match *interaction {
+            Interaction::Pressed => {
+                state.set(GameState::Playing);
+            }
+            Interaction::Hovered => {
+                *color = button_colors.hovered;
+            }
+            Interaction::None => {
+                *color = button_colors.normal;
+            }
+        });
 }
 
 fn cleanup_menu(mut commands: Commands, button: Query<Entity, With<Button>>) {

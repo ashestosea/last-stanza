@@ -128,7 +128,10 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
                 ..Default::default()
             })
             .insert(Sensor)
-            .insert(Collider::rectangle(cliff_shape.x / 2.0, cliff_shape.y / 2.0))
+            .insert(Collider::rectangle(
+                cliff_shape.x / 2.0,
+                cliff_shape.y / 2.0,
+            ))
             .insert(CollisionLayers::new(
                 [PhysicsLayers::CliffEdge],
                 [

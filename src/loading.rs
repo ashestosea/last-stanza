@@ -14,9 +14,8 @@ impl Plugin for LoadingPlugin {
                     .continue_to_state(GameState::Menu)
                     .load_collection::<FontAssets>()
                     .load_collection::<TextureAssets>()
-                    .load_collection::<GameData>()
-                    // .load_collection::<AudioAssets>()
-                    // .build(app)
+                    .load_collection::<GameData>(), // .load_collection::<AudioAssets>()
+                                                    // .build(app)
             );
     }
 }

@@ -1,10 +1,5 @@
 use crate::{enemies::SpawnRates, loading::GameData, GameState};
-use bevy::{
-    prelude::*,
-    reflect::TypePath,
-    time::Stopwatch,
-    utils::HashMap,
-};
+use bevy::{prelude::*, reflect::TypePath, time::Stopwatch, utils::HashMap};
 
 pub struct EventsPlugin;
 

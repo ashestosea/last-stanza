@@ -2,7 +2,7 @@ use crate::{
     enemies::{Explosion, Giant, Hop},
     GameState,
 };
-use bevy::{core::Zeroable, prelude::*, render::camera::*};
+use bevy::{prelude::*, render::camera::*};
 use rand::Rng;
 
 const CAM_POS: Vec3 = Vec3::new(0.0, 8.0, -1.0);

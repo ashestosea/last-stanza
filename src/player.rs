@@ -75,7 +75,10 @@ fn spawn_player(mut commands: Commands) {
         })
         .insert(Player)
         .insert(RigidBody::Static)
-        .insert(Collider::rectangle(PLAYER_SIZE.x / 2.0, PLAYER_SIZE.y / 2.0))
+        .insert(Collider::rectangle(
+            PLAYER_SIZE.x / 2.0,
+            PLAYER_SIZE.y / 2.0,
+        ))
         .insert(CollidingEntities::default())
         .insert(CollisionLayers::new(
             [PhysicsLayers::Player],
@@ -163,6 +166,7 @@ fn launch(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn mouse_input(
     primary_window_query: Query<&Window, With<PrimaryWindow>>,
     input: Res<ButtonInput<MouseButton>>,
@@ -180,7 +184,7 @@ fn mouse_input(
     };
 
     for e in events.read() {
-        let window_size = Vec2::new(window.width() as f32, window.height() as f32);
+        let window_size = Vec2::new(window.width(), window.height());
         let ndc = (e.position / window_size) * 2.0 - Vec2::ONE;
         let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix().inverse();
         mouse_data.world_pos = ndc_to_world.project_point3(ndc.extend(-1.0)).truncate();
