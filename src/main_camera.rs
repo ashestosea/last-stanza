@@ -2,10 +2,10 @@ use crate::{
     enemies::{Explosion, Giant, Hop},
     GameState,
 };
-use bevy::{prelude::*, render::camera::*};
+use bevy::{core::Zeroable, prelude::*, render::camera::*};
 use rand::Rng;
 
-const CAM_POS: Vec3 = Vec3::new(0.0, 8.0, 0.0);
+const CAM_POS: Vec3 = Vec3::new(0.0, 8.0, -1.0);
 
 #[derive(Component)]
 pub struct MainCamera;
@@ -32,6 +32,8 @@ fn setup_camera(mut commands: Commands) {
         Camera2dBundle {
             transform: Transform::from_translation(CAM_POS),
             projection: OrthographicProjection {
+                near: -1000.0,
+                far: 1000.0,
                 scaling_mode: ScalingMode::FixedHorizontal(30.0),
                 ..Default::default()
             },

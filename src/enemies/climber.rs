@@ -47,17 +47,17 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
 
         commands.spawn(ClimberBundle {
             sprite_bundle: SpriteBundle {
-                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 0.0, 0.0)),
                 sprite: Sprite {
                     color: Color::MIDNIGHT_BLUE,
                     custom_size: Some(CLIMBER_SHAPE),
                     ..default()
                 },
+                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 0.0, 0.0)),
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
                 rigidbody: RigidBody::Dynamic,
-                collider: Collider::cuboid(CLIMBER_SHAPE.x / 2.0, CLIMBER_SHAPE.y / 2.0),
+                collider: Collider::rectangle(CLIMBER_SHAPE.x / 2.0, CLIMBER_SHAPE.y / 2.0),
                 collision_layers: CollisionLayers::new(
                     [PhysicsLayers::Enemy, PhysicsLayers::Climber],
                     [
@@ -87,7 +87,7 @@ fn climb(
         for e in colliding_entities.iter() {
             for (entity, collision_layers) in sensor_query.iter() {
                 if e == &entity {
-                    if collision_layers.contains_group(PhysicsLayers::CliffEdge) {
+                    if collision_layers.memberships.has_all /*.contains_group*/(PhysicsLayers::CliffEdge) {
                         let mul: f32 = enemy.facing.into();
                         velocity.x = 1.0 * mul;
                         velocity.y = 9.0;
@@ -111,18 +111,22 @@ fn health(
             // Spawn Explosion
             commands.spawn(ExplosionBundle {
                 sprite_bundle: SpriteSheetBundle {
-                    texture_atlas: texture_assets.explosion.clone(),
-                    sprite: TextureAtlasSprite {
+                    atlas: TextureAtlas {
+                        layout: texture_assets.explosion_layout.clone(),
+                        index: 0,
+                    },
+                    sprite: Sprite {
                         custom_size: Some(Vec2::new(
                             enemy.health.abs() as f32 * 2.0,
                             enemy.health.abs() as f32 * 2.0,
                         )),
                         ..Default::default()
                     },
+                    texture: texture_assets.explosion.clone(),
                     transform: Transform::from_translation(trans.translation),
                     ..Default::default()
                 },
-                collider: Collider::ball(enemy.health.abs() as f32),
+                collider: Collider::circle(enemy.health.abs() as f32),
                 explosion: Explosion {
                     power: enemy.health.abs(),
                     timer: Timer::from_seconds(0.5, TimerMode::Once),

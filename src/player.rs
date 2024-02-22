@@ -75,7 +75,7 @@ fn spawn_player(mut commands: Commands) {
         })
         .insert(Player)
         .insert(RigidBody::Static)
-        .insert(Collider::cuboid(PLAYER_SIZE.x / 2.0, PLAYER_SIZE.y / 2.0))
+        .insert(Collider::rectangle(PLAYER_SIZE.x / 2.0, PLAYER_SIZE.y / 2.0))
         .insert(CollidingEntities::default())
         .insert(CollisionLayers::new(
             [PhysicsLayers::Player],
@@ -99,7 +99,7 @@ fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>)
         .insert(DynamicActorBundle {
             rigidbody: RigidBody::Static,
             locked_axes: LockedAxes::ROTATION_LOCKED,
-            collider: Collider::ball(0.5),
+            collider: Collider::circle(0.5),
             collision_layers: CollisionLayers::new(
                 [PhysicsLayers::PlayerProj],
                 [
@@ -165,7 +165,7 @@ fn launch(
 
 fn mouse_input(
     primary_window_query: Query<&Window, With<PrimaryWindow>>,
-    input: Res<Input<MouseButton>>,
+    input: Res<ButtonInput<MouseButton>>,
     cam_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     proj_query: Query<Entity, (With<PlayerProjectile>, With<Charging>)>,
     texture_assets: Res<TextureAssets>,
@@ -179,7 +179,7 @@ fn mouse_input(
         return;
     };
 
-    for e in events.iter() {
+    for e in events.read() {
         let window_size = Vec2::new(window.width() as f32, window.height() as f32);
         let ndc = (e.position / window_size) * 2.0 - Vec2::ONE;
         let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix().inverse();
@@ -248,13 +248,13 @@ fn projectile_destruction(
 
 fn hit(
     mut state: ResMut<NextState<GameState>>,
-    mut time: ResMut<Time>,
+    // mut time: ResMut<Time>,
     query: Query<&CollidingEntities, With<Player>>,
 ) {
     for colliding_entities in query.iter() {
         if !colliding_entities.is_empty() {
             state.set(GameState::Menu);
-            time.pause();
+            // time.pause();
             return;
         }
     }

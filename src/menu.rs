@@ -57,7 +57,7 @@ fn setup_menu(
                             color: Color::rgb(0.9, 0.9, 0.9),
                         },
                     }],
-                    alignment: TextAlignment::Center,
+                    justify: JustifyText::Center,
                     ..Default::default()
                 },
                 ..Default::default()
@@ -73,7 +73,7 @@ fn click_play_button(
         (Changed<Interaction>, With<Button>),
     >,
 ) {
-    interaction_query.for_each_mut(|(interaction, mut color)| match *interaction {
+    interaction_query.iter_mut().for_each(|(interaction, mut color)| match *interaction {
         Interaction::Pressed => {
             state.set(GameState::Playing);
         }

@@ -30,7 +30,7 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<GameState>()
+        app.init_state::<GameState>()
             .add_plugins(LoadingPlugin)
             .add_plugins(EventsPlugin)
             .add_plugins(MainCameraPlugin)
@@ -51,17 +51,17 @@ impl Plugin for GamePlugin {
     }
 }
 
-fn cleanup_far_entities(mut commands: Commands, query: Query<(Entity, &Transform)>) {
-    for (entity, transform) in query.iter() {
-        if transform.translation.x < -50.
-            || transform.translation.x > 50.
-            || transform.translation.y < -50.
-            || transform.translation.y > 50.
-        {
-            commands.entity(entity).despawn();
-        }
-    }
-}
+// fn cleanup_far_entities(mut commands: Commands, query: Query<(Entity, &Transform)>) {
+//     for (entity, transform) in query.iter() {
+//         if transform.translation.x < -50.
+//             || transform.translation.x > 50.
+//             || transform.translation.y < -50.
+//             || transform.translation.y > 50.
+//         {
+//             commands.entity(entity).despawn();
+//         }
+//     }
+// }
 
 #[derive(PhysicsLayer)]
 pub(crate) enum PhysicsLayers {

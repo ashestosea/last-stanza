@@ -195,7 +195,7 @@ fn update_enemy_spawns(
     mut spawn_change_ev: EventReader<EnemySpawnsChanged>,
     mut spawn_rates: ResMut<SpawnRates>,
 ) {
-    for e in spawn_change_ev.iter() {
+    for e in spawn_change_ev.read() {
         if let Some(val) = e.min_spawn_time {
             spawn_rates.min_spawn_time = Some(val as f32);
         }
@@ -354,7 +354,7 @@ fn explosion_animate(
     time: Res<Time>,
     mut query: Query<(
         &mut ExplosionAnimationState,
-        &mut TextureAtlasSprite,
+        &mut TextureAtlas,
         &ExplosionAnimation,
     )>,
 ) {
@@ -374,7 +374,7 @@ fn explosion_cleanup(
 ) {
     for (entity, mut explosion) in query.iter_mut() {
         explosion.timer.tick(time.delta());
-        commands.entity(entity).insert(Collider::ball(0.0));
+        commands.entity(entity).insert(Collider::circle(0.0));
 
         if explosion.timer.finished() {
             commands.entity(entity).despawn();
