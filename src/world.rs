@@ -122,7 +122,7 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
             .spawn(TransformBundle {
                 local: Transform::from_translation(Vec3::new(
                     pos.x,
-                    pos.y - (step_shape.y / 2.0),
+                    pos.y - (step_shape.y / 4.0),
                     pos.z,
                 )),
                 ..Default::default()
