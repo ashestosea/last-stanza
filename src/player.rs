@@ -75,10 +75,7 @@ fn spawn_player(mut commands: Commands) {
         })
         .insert(Player)
         .insert(RigidBody::Static)
-        .insert(Collider::rectangle(
-            PLAYER_SIZE.x / 2.0,
-            PLAYER_SIZE.y / 2.0,
-        ))
+        .insert(Collider::rectangle(PLAYER_SIZE.x, PLAYER_SIZE.y))
         .insert(CollidingEntities::default())
         .insert(CollisionLayers::new(
             [PhysicsLayers::Player],

@@ -77,7 +77,7 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
             local: Transform::from_translation(pos),
             ..Default::default()
         },
-        collider: Collider::rectangle(ground_shape.x / 2.0, ground_shape.y / 2.0),
+        collider: Collider::rectangle(ground_shape.x, ground_shape.y),
         ..Default::default()
     });
 
@@ -112,7 +112,7 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
                 local: Transform::from_translation(pos),
                 ..Default::default()
             },
-            collider: Collider::rectangle(step_shape.x / 2.0, step_shape.y / 2.0),
+            collider: Collider::rectangle(step_shape.x, step_shape.y),
             ..Default::default()
         });
 
@@ -122,16 +122,13 @@ fn spawn_world(mut commands: Commands, texture_assets: Res<TextureAssets>) {
             .spawn(TransformBundle {
                 local: Transform::from_translation(Vec3::new(
                     pos.x,
-                    pos.y - (step_shape.y / 4.0),
+                    pos.y - (step_shape.y / 2.0),
                     pos.z,
                 )),
                 ..Default::default()
             })
             .insert(Sensor)
-            .insert(Collider::rectangle(
-                cliff_shape.x / 2.0,
-                cliff_shape.y / 2.0,
-            ))
+            .insert(Collider::rectangle(cliff_shape.x, cliff_shape.y))
             .insert(CollisionLayers::new(
                 [PhysicsLayers::CliffEdge],
                 [
