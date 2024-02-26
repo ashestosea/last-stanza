@@ -52,7 +52,7 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
                     custom_size: Some(CLIMBER_SHAPE),
                     ..default()
                 },
-                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 0.0, 0.0)),
+                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 1.0, 0.0)),
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
@@ -69,7 +69,8 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
                     ],
                 ),
                 friction: Friction::ZERO,
-                restitution: Restitution::ZERO,
+                restitution: Restitution::PERFECTLY_INELASTIC,
+                mass: Mass(1.0),
                 velocity: LinearVelocity(Vec2::new(facing_mul * 2.0, 0.0)),
                 ..Default::default()
             },
