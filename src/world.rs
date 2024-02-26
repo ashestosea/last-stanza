@@ -7,6 +7,7 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Playing), spawn_world);
+        // .add_systems(Update, debug_world.run_if(in_state(GameState::Playing)));
     }
 }
 
@@ -47,6 +48,45 @@ impl Default for WorldBundle {
             restitution: Restitution::new(0.0),
             ground: Ground,
         }
+    }
+}
+
+#[allow(dead_code)]
+fn debug_world(mut gizmos: Gizmos) {
+    let step_height = 2.0;
+    let step_decrement = 6.4;
+    let step_count = 3;
+
+    // Ground
+    let mut pos = Vec3::new(0.0, -3.0, 0.0);
+    let ground_shape = Vec2::new(100.0, 6.0);
+
+    // Ground collider
+    gizmos.rect_2d(pos.xy(), 0.0, ground_shape, Color::BLACK);
+
+    let mut step_shape = Vec2::new(0.0, step_height);
+
+    // Step colliders
+    for i in 0..=step_count {
+        if i < step_count {
+            step_shape.x = (step_height * 11.0) - (i as f32 * step_decrement);
+        } else {
+            step_shape.x = 1.;
+        }
+        pos.y = 1.0 + step_height * i as f32;
+
+        // Steps
+        gizmos.rect_2d(pos.xy(), 0.0, step_shape, Color::RED);
+
+        // Cliff sensors
+        let cliff_shape = Vec2::new(step_shape.x + 1.5, 0.01);
+        // commands.spawn(bevy::math::primitives::Rectangle)
+        gizmos.primitive_2d(
+            Rectangle::from_size(cliff_shape),
+            Vec2::new(pos.x, pos.y - (step_shape.y / 4.0)),
+            0.0,
+            Color::GREEN,
+        );
     }
 }
 

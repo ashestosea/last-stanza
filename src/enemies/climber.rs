@@ -31,6 +31,17 @@ impl Plugin for ClimberPlugin {
             Update,
             (climb, spawn, health).run_if(in_state(GameState::Playing)),
         );
+        // .add_systems(
+        //     Update,
+        //     debug_colliders.run_if(in_state(GameState::Playing)),
+        // );
+    }
+}
+
+#[allow(dead_code)]
+fn debug_colliders(query: Query<&Position, With<Climber>>, mut gizmos: Gizmos) {
+    for p in query.iter() {
+        gizmos.rect_2d(p.0, 0.0, CLIMBER_SHAPE, Color::PINK);
     }
 }
 
