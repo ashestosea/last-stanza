@@ -104,7 +104,7 @@ impl Default for DynamicActorBundle {
             colliding_entities: Default::default(),
             friction: Default::default(),
             restitution: Default::default(),
-            mass: Mass(500.0),
+            mass: Default::default(),
             velocity: Default::default(),
         }
     }
