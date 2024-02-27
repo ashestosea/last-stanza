@@ -276,19 +276,20 @@ fn hop(
     mut query: Query<(
         &Enemy,
         &LinearVelocity,
-        &mut ExternalForce,
+        &mut ExternalImpulse,
         &CollidingEntities,
-        &Hop,
+        &mut Hop,
     )>,
 ) {
-    for (enemy, vel, mut force, colliding_entities, hop) in query.iter_mut() {
+    for (enemy, vel, mut force, colliding_entities, mut hop) in query.iter_mut() {
         if hop.grounded {
-            force.set_force(hop.power);
+            force.set_impulse(hop.power);
+            hop.grounded = false;
         } else if colliding_entities.is_empty() {
             // Nudge Hopping actor if it's stalled out
             if vel.x.abs() < 0.1 && vel.y.abs() < 0.1 {
                 let mul: f32 = enemy.facing.into();
-                force.set_force(Vec2::X * 2.0 * mul);
+                force.set_impulse(Vec2::X * 2.0 * mul);
             }
         }
     }
@@ -307,26 +308,6 @@ fn hop_grounding(
         }
     }
 }
-
-// fn hop_grounding_events2(
-//     mut evt_reader: EventReader<Collision>,
-//     mut hop_query: Query<(Entity, &mut Hop, &CollidingEntities)>,
-//     ground_query: Query<Entity, With<Ground>>) {
-//     for Collision(contact) in evt_reader.iter() {
-//         for (hop_entity, mut hop, colliding_entities) in hop_query.iter() {
-//             for colliding_entity in colliding_entities.iter() {
-//                 if ground_query.contains(*colliding_entity) {
-//                     for a in evt_reader.iter() {
-//                         if (a.0.entity1 == hop_entity || a.0.entity2 == hop_entity) && a.0.normal.x == 0.0 {
-//                             hop.grounded = true;
-//                             return;
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
 
 fn enemy_hits(
     proj_query: Query<(Entity, &PlayerProjectile)>,
