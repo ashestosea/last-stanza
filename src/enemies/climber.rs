@@ -81,7 +81,6 @@ fn spawn(query: Query<(Entity, &ClimberSpawn)>, mut commands: Commands) {
                 ),
                 friction: Friction::ZERO,
                 restitution: Restitution::PERFECTLY_INELASTIC,
-                mass: Mass(1.0),
                 velocity: LinearVelocity(Vec2::new(facing_mul * 2.0, 0.0)),
                 ..Default::default()
             },
