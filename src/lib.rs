@@ -1,3 +1,5 @@
+#[cfg(debug_assertions)]
+mod debug;
 mod enemies;
 pub mod events;
 mod loading;
@@ -17,6 +19,8 @@ use crate::world::WorldPlugin;
 use bevy::app::App;
 use bevy::prelude::*;
 use bevy_xpbd_2d::prelude::*;
+#[cfg(debug_assertions)]
+use debug::DebugPlugin;
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States, SystemSet)]
 enum GameState {
@@ -40,14 +44,13 @@ impl Plugin for GamePlugin {
             .add_plugins(EnemiesPlugin)
             .add_plugins(PhysicsPlugins::default())
             // .add_systems(Update, cleanup_far_entities.run_if(in_state(GameState::Playing)))
-        // .insert_resource(Gravity::from(Vec2::new(0.0, -9.81)));
-        ;
+            // .insert_resource(Gravity::from(Vec2::new(0.0, -9.81)));
+            ;
 
-        // #[cfg(debug_assertions)]
-        // {
-        //     app.add_plugins(FrameTimeDiagnosticsPlugin::default())
-        //         .add_plugins(LogDiagnosticsPlugin::default());
-        // }
+        #[cfg(debug_assertions)]
+        {
+            app.add_plugins(DebugPlugin);
+        }
     }
 }
 

@@ -7,7 +7,11 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Playing), spawn_world);
-        // .add_systems(Update, debug_world.run_if(in_state(GameState::Playing)));
+        
+        #[cfg(debug_assertions)]
+        {
+            app.add_systems(Update, debug_world.run_if(in_state(GameState::Playing)));
+        }
     }
 }
 
@@ -51,7 +55,7 @@ impl Default for WorldBundle {
     }
 }
 
-#[allow(dead_code)]
+#[cfg(debug_assertions)]
 fn debug_world(mut gizmos: Gizmos) {
     let step_height = 2.0;
     let step_decrement = 6.4;
