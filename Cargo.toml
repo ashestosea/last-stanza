@@ -32,6 +32,7 @@ bevy_common_assets = { version = "0.10.0", features = ["toml"] }
 # bevy_tweening = "*"
 benimator = "*"
 # hot-lib-reloader = "*"
+bevy_framepace = "0.15"
 
 [profile.dev.package."*"]
 opt-level = 3
