@@ -83,17 +83,14 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                     grounded: false,
                     power,
                 },
-                ray: RayCaster::new(
-                    Vec2 {
-                        x: 0.0,
-                        y: -(COLLIDER_SHAPE.y / 2.0),
-                    },
+                caster: ShapeCaster::new(
+                    Collider::rectangle(COLLIDER_SHAPE.x, COLLIDER_SHAPE.y),
+                    Vec2::ZERO,
+                    0.0,
                     Direction2d::NEG_Y,
                 )
                 .with_max_time_of_impact(0.1)
-                .with_query_filter(SpatialQueryFilter::from_mask(
-                    PhysicsLayers::Ground.to_bits() | PhysicsLayers::Hopper.to_bits(),
-                )),
+                .with_query_filter(SpatialQueryFilter::from_mask(PhysicsLayers::Ground)),
             },
             ..Default::default()
         });

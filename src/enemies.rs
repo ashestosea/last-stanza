@@ -9,7 +9,6 @@ use std::time::Duration;
 pub use crate::enemies::giant::Giant;
 use crate::events::EnemySpawnsChanged;
 use crate::player::PlayerProjectile;
-use crate::world::Ground;
 use crate::{GameState, PhysicsLayers};
 use benimator::FrameRate;
 use bevy::prelude::*;
@@ -124,7 +123,7 @@ pub(crate) struct Hop {
 #[derive(Bundle, Default)]
 pub(crate) struct HopBundle {
     pub hop: Hop,
-    pub ray: RayCaster,
+    pub caster: ShapeCaster
 }
 
 #[derive(Resource)]
@@ -296,12 +295,11 @@ fn hop(
 }
 
 fn hop_grounding(
-    mut query: Query<(&mut Hop, &RayHits)>,
-    ground_query: Query<Entity, With<Ground>>,
+    mut query: Query<(&mut Hop, &ShapeHits)>,
 ) {
     for (mut hop, hits) in query.iter_mut() {
-        for hit in hits.iter_sorted() {
-            if hit.normal == Vec2::Y && ground_query.contains(hit.entity) {
+        for hit in hits.iter() {
+            if hit.normal1 == Vec2::Y {
                 hop.grounded = true;
                 return;
             }
