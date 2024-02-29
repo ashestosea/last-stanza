@@ -23,7 +23,7 @@ struct LurkerBundle {
     sprite_bundle: SpriteBundle,
     dynamic_actor_bundle: DynamicActorBundle,
     // active_collision_types: ActiveCollisionTypes,
-    external_force: ExternalForce,
+    external_impulse: ExternalImpulse,
     enemy: Enemy,
     lurker: Lurker,
 }
@@ -72,11 +72,11 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
                         PhysicsLayers::Explosion,
                     ],
                 ),
-                friction: Friction::new(10.0),
+                friction: Friction::new(6.0),
                 restitution: Restitution::new(0.0),
                 ..Default::default()
             },
-            external_force: ExternalForce::new(Vec2::new(facing_mul * 7.0, 0.0)),
+            external_impulse: ExternalImpulse::ZERO,
             enemy: Enemy { health: 1, facing },
             lurker: Lurker {
                 step: 0,
@@ -89,13 +89,20 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
     }
 }
 
-fn lurk(mut query: Query<(&Enemy, &mut ExternalForce, &mut Lurker)>, time: Res<Time>) {
-    for (enemy, mut force, mut lurker) in query.iter_mut() {
+fn lurk(mut query: Query<(&Enemy, &mut ExternalImpulse, &mut Lurker)>, time: Res<Time>) {
+    for (enemy, mut impulse, mut lurker) in query.iter_mut() {
         lurker.timer.tick(time.delta());
         if lurker.timer.finished() && lurker.step == 0 {
+            lurker.timer.reset();
             lurker.step += 1;
             let mul: f32 = enemy.facing.into();
-            force.set_force(Vec2::new(7.5 * mul, 28.0));
+            impulse.set_impulse(Vec2::new(20.0 * mul, 0.0));
+        }
+        else if lurker.timer.finished() && lurker.step == 1 {
+            lurker.timer.reset();
+            lurker.step += 1;
+            let mul: f32 = enemy.facing.into();
+            impulse.set_impulse(Vec2::new(20.0 * mul, 25.0));
         }
     }
 }
