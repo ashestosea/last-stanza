@@ -49,8 +49,8 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
         let facing_mul: f32 = facing.into();
 
         let power = Vec2::new(
-            rand::thread_rng().gen_range(2.0..3.5) * facing_mul,
-            rand::thread_rng().gen_range(50.5..55.0),
+            rand::thread_rng().gen_range(10.0..20.0) * facing_mul,
+            rand::thread_rng().gen_range(1200.0..1201.0),
         );
 
         commands.spawn(GiantBundle {
@@ -73,6 +73,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                         PhysicsLayers::PlayerProj,
                     ],
                 ),
+                mass: Mass(100.0),
                 friction: Friction::new(2.0),
                 restitution: Restitution::new(0.2),
                 ..Default::default()
