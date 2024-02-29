@@ -3,6 +3,7 @@ use crate::{
     GameState,
 };
 use bevy::{prelude::*, render::camera::*};
+use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
 use rand::Rng;
 
 const CAM_POS: Vec3 = Vec3::new(0.0, 8.0, -1.0);
@@ -20,14 +21,18 @@ pub struct MainCameraPlugin;
 
 impl Plugin for MainCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_camera).add_systems(
-            Update,
-            (camera_shake, explosion_trauma, giant_steps).run_if(in_state(GameState::Playing)),
-        );
+        app.add_plugins(FramepacePlugin)
+            .add_systems(Startup, setup_camera)
+            .add_systems(
+                Update,
+                (camera_shake, explosion_trauma, giant_steps).run_if(in_state(GameState::Playing)),
+            );
     }
 }
 
-fn setup_camera(mut commands: Commands) {
+fn setup_camera(mut commands: Commands, mut framepace_settings: ResMut<FramepaceSettings>) {
+    framepace_settings.limiter = Limiter::from_framerate(60.0);
+
     commands.spawn((
         Camera2dBundle {
             transform: Transform::from_translation(CAM_POS),
