@@ -108,16 +108,9 @@ fn spawn_projectile(commands: &mut Commands, texture_assets: Res<TextureAssets>)
                     PhysicsLayers::EnemyProj,
                 ],
             ),
-            friction: Friction {
-                static_coefficient: 0.0,
-                dynamic_coefficient: 0.0,
-                combine_rule: CoefficientCombine::Min,
-            },
-            restitution: Restitution {
-                coefficient: 2.0,
-                combine_rule: Default::default(),
-            },
-            mass: Mass(100.0),
+            mass: Mass(50.0),
+            friction: Friction::ZERO,
+            restitution: Restitution::PERFECTLY_ELASTIC,
             ..Default::default()
         })
         .insert(Timeout {
