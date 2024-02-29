@@ -49,7 +49,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
         let facing_mul: f32 = facing.into();
 
         let power = Vec2::new(
-            rand::thread_rng().gen_range(10.0..20.0) * facing_mul,
+            0.0,
             rand::thread_rng().gen_range(1200.0..1201.0),
         );
 
@@ -93,6 +93,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                 .with_max_time_of_impact(0.1)
                 .with_query_filter(SpatialQueryFilter::from_mask(PhysicsLayers::Ground)),
             },
+            external_force: ExternalForce::new(Vec2::new(25.0 * facing_mul, 0.0)).with_persistence(true),
             ..Default::default()
         });
     }
@@ -100,14 +101,14 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
 
 fn hit(
     proj_query: Query<(Entity, &PlayerProjectile)>,
-    mut query: Query<(&mut ExternalForce, &Enemy, &CollidingEntities), With<Giant>>,
+    mut query: Query<(&mut ExternalImpulse, &Enemy, &CollidingEntities), With<Giant>>,
 ) {
     for (mut force, enemy, colliding_entities) in query.iter_mut() {
         for coll_entity in colliding_entities.iter() {
             for (proj_entity, projectile) in proj_query.iter() {
                 if coll_entity == &proj_entity {
-                    force.set_force(
-                        Vec2::X * -f32::from(enemy.facing) * (projectile.size as f32) * 7.5,
+                    force.set_impulse(
+                        Vec2::X * -f32::from(enemy.facing) * (projectile.size as f32) * 50.0,
                     );
                 }
             }
