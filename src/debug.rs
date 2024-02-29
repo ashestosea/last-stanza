@@ -94,7 +94,6 @@ fn fps_text_update_system(
             .get(&FrameTimeDiagnosticsPlugin::FPS)
             .and_then(|fps| fps.smoothed())
         {
-            println!("{}", value);
             // Format the number as to leave space for 4 digits, just in case,
             // right-aligned and rounded. This helps readability when the
             // number changes rapidly.
