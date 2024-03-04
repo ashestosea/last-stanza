@@ -79,6 +79,8 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
             hop: HopBundle {
                 hop: Hop {
                     grounded: false,
+                    hop_timer: Timer::from_seconds(0.5, TimerMode::Once),
+                    hop_reset_timer: Timer::from_seconds(1.0, TimerMode::Once),
                     power,
                 },
                 caster: ShapeCaster::new(

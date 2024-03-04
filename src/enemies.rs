@@ -117,6 +117,8 @@ struct Behemoth;
 #[derive(Component, Default)]
 pub(crate) struct Hop {
     pub grounded: bool,
+    pub hop_timer: Timer,
+    pub hop_reset_timer: Timer,
     pub power: Vec2,
 }
 
@@ -279,17 +281,28 @@ fn hop(
         &CollidingEntities,
         &mut Hop,
     )>,
+    time: Res<Time>
 ) {
     for (enemy, vel, mut force, colliding_entities, mut hop) in query.iter_mut() {
-        if hop.grounded {
-            force.set_impulse(hop.power);
-            hop.grounded = false;
-        } else if colliding_entities.is_empty() {
-            // Nudge Hopping actor if it's stalled out
-            if vel.x.abs() < 0.1 && vel.y.abs() < 0.1 {
-                let mul: f32 = enemy.facing.into();
-                force.set_impulse(Vec2::X * 2.0 * mul);
+        if hop.hop_reset_timer.finished() {
+            if hop.grounded {
+                if hop.hop_timer.finished() {
+                    hop.hop_timer.reset();
+                    hop.hop_reset_timer.reset();
+                    force.set_impulse(hop.power);
+                    hop.grounded = false;
+                } else {
+                    hop.hop_timer.tick(time.delta());
+                }
+            } else if colliding_entities.is_empty() {
+                // Nudge Hopping actor if it's stalled out
+                if vel.x.abs() < 0.1 && vel.y.abs() < 0.1 {
+                    let mul: f32 = enemy.facing.into();
+                    force.set_impulse(Vec2::X * 2.0 * mul);
+                }
             }
+        }  else {
+            hop.hop_reset_timer.tick(time.delta());
         }
     }
 }

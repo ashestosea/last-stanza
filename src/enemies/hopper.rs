@@ -95,6 +95,8 @@ fn spawn(
             hop: HopBundle {
                 hop: Hop {
                     grounded: false,
+                    hop_timer: Timer::from_seconds(0.16, TimerMode::Once),
+                    hop_reset_timer: Timer::from_seconds(0.5, TimerMode::Once),
                     power,
                 },
                 caster: ShapeCaster::new(
@@ -103,7 +105,7 @@ fn spawn(
                     0.0,
                     Direction2d::NEG_Y,
                 )
-                .with_max_time_of_impact(0.1)
+                .with_max_time_of_impact(0.05)
                 .with_query_filter(SpatialQueryFilter::from_mask(PhysicsLayers::Ground)),
             },
             ..Default::default()
