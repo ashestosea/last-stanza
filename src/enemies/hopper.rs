@@ -53,8 +53,8 @@ fn spawn(
         let facing_mul: f32 = facing.into();
 
         let power = Vec2::new(
-            rand::thread_rng().gen_range(1.0..1.1) * facing_mul,
-            rand::thread_rng().gen_range(20.0..25.0),
+            rand::thread_rng().gen_range(3.0..3.1) * facing_mul,
+            rand::thread_rng().gen_range(50.0..55.0),
         );
 
         let height = rand::thread_rng().gen_range(5f32..10f32);
@@ -87,7 +87,7 @@ fn spawn(
                     ],
                 ),
                 friction: Friction::new(2.0),
-                restitution: Restitution::new(0.2),
+                restitution: Restitution::new(1.0),
                 velocity: Vec2::new(2.0 * facing_mul, 0.0).into(),
                 ..Default::default()
             },
