@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
     enemies::{Enemy, Explosion, ExplosionBundle, Facing},
     loading::TextureAssets,
@@ -57,7 +59,7 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
                     custom_size: Some(LURKER_SHAPE),
                     ..default()
                 },
-                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 3.0, 0.0)),
+                transform: Transform::from_translation(Vec3::new(16.0 * -facing_mul, 1.0, 0.0)),
                 ..Default::default()
             },
             dynamic_actor_bundle: DynamicActorBundle {
@@ -76,7 +78,7 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
                 restitution: Restitution::new(0.0),
                 ..Default::default()
             },
-            external_impulse: ExternalImpulse::ZERO,
+            external_impulse: ExternalImpulse::new(Vec2::new(20.0 * facing_mul, 0.0)),
             enemy: Enemy { health: 1, facing },
             lurker: Lurker {
                 step: 0,
@@ -92,13 +94,8 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
 fn lurk(mut query: Query<(&Enemy, &mut ExternalImpulse, &mut Lurker)>, time: Res<Time>) {
     for (enemy, mut impulse, mut lurker) in query.iter_mut() {
         lurker.timer.tick(time.delta());
+        
         if lurker.timer.finished() && lurker.step == 0 {
-            lurker.timer.reset();
-            lurker.step += 1;
-            let mul: f32 = enemy.facing.into();
-            impulse.set_impulse(Vec2::new(20.0 * mul, 0.0));
-        }
-        else if lurker.timer.finished() && lurker.step == 1 {
             lurker.timer.reset();
             lurker.step += 1;
             let mul: f32 = enemy.facing.into();
