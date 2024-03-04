@@ -14,7 +14,8 @@ impl Plugin for LoadingPlugin {
                     .continue_to_state(GameState::Menu)
                     .load_collection::<FontAssets>()
                     .load_collection::<TextureAssets>()
-                    .load_collection::<GameData>(), // .load_collection::<AudioAssets>()
+                    .load_collection::<AudioAssets>()
+                    .load_collection::<GameData>()
                                                     // .build(app)
             );
     }
@@ -26,11 +27,17 @@ pub struct FontAssets {
     pub fantasque_sans: Handle<Font>,
 }
 
-// #[derive(AssetCollection)]
-// pub struct AudioAssets {
-//     #[asset(path = "audio/flying.ogg")]
-//     pub flying: Handle<AudioSource>,
-// }
+#[derive(Resource, AssetCollection)]
+pub struct AudioAssets {
+    #[asset(path = "audio/snare_hit_1.ogg")]
+    pub snare_hit_1: Handle<AudioSource>,
+    #[asset(path = "audio/snare_hit_2.ogg")]
+    pub snare_hit_2: Handle<AudioSource>,
+    #[asset(path = "audio/snare_hit_3.ogg")]
+    pub snare_hit_3: Handle<AudioSource>,
+    #[asset(path = "audio/snare_hit_max.ogg")]
+    pub snare_hit_max: Handle<AudioSource>,
+}
 
 #[derive(Resource, AssetCollection)]
 pub struct TextureAssets {

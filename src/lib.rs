@@ -6,6 +6,7 @@ mod loading;
 mod main_camera;
 mod menu;
 mod player;
+mod sfx;
 mod world;
 
 use crate::enemies::EnemiesPlugin;
@@ -14,6 +15,7 @@ use crate::loading::LoadingPlugin;
 use crate::main_camera::MainCameraPlugin;
 use crate::menu::MenuPlugin;
 use crate::player::PlayerPlugin;
+use crate::sfx::SfxPlugin;
 use crate::world::WorldPlugin;
 
 use bevy::app::App;
@@ -42,6 +44,7 @@ impl Plugin for GamePlugin {
             .add_plugins(WorldPlugin)
             .add_plugins(PlayerPlugin)
             .add_plugins(EnemiesPlugin)
+            .add_plugins(SfxPlugin)
             .add_plugins(PhysicsPlugins::default())
             // .add_systems(Update, cleanup_far_entities.run_if(in_state(GameState::Playing)))
             // .insert_resource(Gravity::from(Vec2::new(0.0, -9.81)));
