@@ -123,7 +123,7 @@ pub(crate) struct Hop {
 #[derive(Bundle, Default)]
 pub(crate) struct HopBundle {
     pub hop: Hop,
-    pub caster: ShapeCaster
+    pub caster: ShapeCaster,
 }
 
 #[derive(Resource)]
@@ -294,9 +294,7 @@ fn hop(
     }
 }
 
-fn hop_grounding(
-    mut query: Query<(&mut Hop, &ShapeHits)>,
-) {
+fn hop_grounding(mut query: Query<(&mut Hop, &ShapeHits)>) {
     for (mut hop, hits) in query.iter_mut() {
         for hit in hits.iter() {
             if hit.normal1 == Vec2::Y {

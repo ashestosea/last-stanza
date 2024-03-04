@@ -48,10 +48,7 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
         };
         let facing_mul: f32 = facing.into();
 
-        let power = Vec2::new(
-            0.0,
-            rand::thread_rng().gen_range(1200.0..1201.0),
-        );
+        let power = Vec2::new(0.0, rand::thread_rng().gen_range(1200.0..1201.0));
 
         commands.spawn(GiantBundle {
             sprite_bundle: SpriteBundle {
@@ -93,7 +90,8 @@ fn spawn(query: Query<(Entity, &GiantSpawn)>, mut commands: Commands) {
                 .with_max_time_of_impact(0.1)
                 .with_query_filter(SpatialQueryFilter::from_mask(PhysicsLayers::Ground)),
             },
-            external_force: ExternalForce::new(Vec2::new(25.0 * facing_mul, 0.0)).with_persistence(true),
+            external_force: ExternalForce::new(Vec2::new(25.0 * facing_mul, 0.0))
+                .with_persistence(true),
             ..Default::default()
         });
     }

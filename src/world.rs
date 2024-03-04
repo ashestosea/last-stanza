@@ -7,7 +7,7 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Playing), spawn_world);
-        
+
         #[cfg(debug_assertions)]
         {
             app.add_systems(Update, debug_world.run_if(in_state(GameState::Playing)));

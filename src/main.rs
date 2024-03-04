@@ -9,7 +9,7 @@ fn main() {
             primary_window: Some(Window {
                 title: "The Last Stanza".into(),
                 name: Some("last-stanza".into()),
-                
+
                 present_mode: bevy::window::PresentMode::AutoNoVsync,
                 ..default()
             }),

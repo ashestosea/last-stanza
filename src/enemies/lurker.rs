@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{
     enemies::{Enemy, Explosion, ExplosionBundle, Facing},
     loading::TextureAssets,
@@ -94,7 +92,7 @@ fn spawn(query: Query<(Entity, &LurkerSpawn)>, mut commands: Commands) {
 fn lurk(mut query: Query<(&Enemy, &mut ExternalImpulse, &mut Lurker)>, time: Res<Time>) {
     for (enemy, mut impulse, mut lurker) in query.iter_mut() {
         lurker.timer.tick(time.delta());
-        
+
         if lurker.timer.finished() && lurker.step == 0 {
             lurker.timer.reset();
             lurker.step += 1;
